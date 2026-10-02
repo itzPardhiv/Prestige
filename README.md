@@ -28,7 +28,7 @@
 
 <div align="center">
 
-## The workspace for serious cipher analysis.
+## The workspace for cipher analysis.
 
 PRESTIGE is a precision-focused cryptanalysis workspace for decoding messages,
 examining transformations, performing statistical analysis, and producing
