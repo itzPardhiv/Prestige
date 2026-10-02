@@ -1,30 +1,84 @@
+<div align="center">
+
 # PRESTIGE
 
-### Cipher Intelligence System
+### CIPHER INTELLIGENCE SYSTEM
 
-A precision-focused, local-first workspace for cipher decoding, cryptanalysis, investigation records, and technical reporting.
+**Decode with precision. Analyze with evidence. Preserve the investigation.**
 
-Built by **A.J. Pardhiv**
+<br />
+
+[![TypeScript](https://img.shields.io/badge/TypeScript-Strict-111111?style=flat-square\&logo=typescript\&logoColor=white)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-18-111111?style=flat-square\&logo=react\&logoColor=white)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Vite-5-111111?style=flat-square\&logo=vite\&logoColor=white)](https://vitejs.dev/)
+[![Supabase](https://img.shields.io/badge/Supabase-Backend-111111?style=flat-square\&logo=supabase\&logoColor=white)](https://supabase.com/)
+[![Vercel](https://img.shields.io/badge/Deployed_on-Vercel-111111?style=flat-square\&logo=vercel\&logoColor=white)](https://vercel.com/)
+
+<br />
+
+**A.J. Pardhiv**
+
+*B.Tech — Artificial Intelligence & Data Science*
+
+</div>
 
 ---
 
-## Overview
+<br />
 
-PRESTIGE is a modern cryptanalysis and cipher-learning application designed around a simple principle:
+<div align="center">
 
-> **Understand the transformation. Verify the result. Preserve the investigation.**
+## The workspace for serious cipher analysis.
 
-It provides a focused workspace for decoding messages, analyzing cipher characteristics, recording investigations, and generating structured technical reports.
+PRESTIGE is a precision-focused cryptanalysis workspace for decoding messages,
+examining transformations, performing statistical analysis, and producing
+structured technical investigation reports.
 
-PRESTIGE is intentionally designed without unnecessary gamification, social features, or distracting interfaces.
+**No noise. No unnecessary gamification. Just the work.**
+
+</div>
+
+<br />
 
 ---
 
-## Core Capabilities
+# 01 — Product
 
-### Cipher Analysis
+PRESTIGE brings cipher decoding, cryptanalysis, verification, and technical reporting into one focused workspace.
 
-Decode and analyze multiple classical and encoding-based transformations, including:
+Instead of treating decoding as a single input-and-output operation, PRESTIGE preserves the **reasoning behind the result**.
+
+Every investigation can move through a clear sequence:
+
+```text
+INPUT
+  ↓
+IDENTIFY
+  ↓
+ANALYZE
+  ↓
+TRANSFORM
+  ↓
+VERIFY
+  ↓
+DOCUMENT
+```
+
+The result is not simply a decoded message.
+
+It is a reproducible technical record of how that message was transformed.
+
+---
+
+# 02 — What PRESTIGE Does
+
+<table>
+<tr>
+<td width="50%" valign="top">
+
+### Decode
+
+Work with multiple classical ciphers and encoding schemes.
 
 * Caesar
 * Vigenère
@@ -36,124 +90,407 @@ Decode and analyze multiple classical and encoding-based transformations, includ
 * Binary
 * Morse
 
-The system also provides automated detection and frequency-based analysis where applicable.
+</td>
 
-### Investigation Workspace
+<td width="50%" valign="top">
 
-Work directly with ciphertext and inspect:
+### Analyze
 
-* Transformation parameters
-* Decoding methodology
+Inspect the structure of the input rather than treating it as a black box.
+
 * Character statistics
-* Frequency distributions
+* Letter frequencies
 * Index of Coincidence
 * Chi-squared analysis
-* Verification results
+* Cipher parameters
+* Transformation behavior
 
-### Technical Reports
+</td>
+</tr>
 
-Generate structured cryptanalysis reports containing:
+<tr>
+<td width="50%" valign="top">
 
-* Report identity
-* Input artifact
-* Cipher configuration
-* Cryptanalysis method
-* Statistical analysis
-* Decoding result
-* Transformation verification
-* Technical metadata
-* Investigation timeline
+### Verify
+
+A decoding result should be testable.
+
+Where supported, PRESTIGE performs reverse transformation checks to determine whether the decoded result reconstructs the original ciphertext.
+
+</td>
+
+<td width="50%" valign="top">
+
+### Document
+
+Turn an investigation into a structured technical report.
+
+* Method
+* Statistics
+* Result
+* Verification
+* Metadata
+* Timeline
 * Conclusion
 
-Reports can be exported as:
-
-* PDF
-* Markdown
-* TXT
-
-### Local-First Storage
-
-PRESTIGE keeps investigation and report data in the user's browser.
-
-This means:
-
-* No report content needs to be uploaded to a remote server
-* Data remains available after refreshing the browser
-* Reports remain local to the browser/device
-* Clearing browser storage can remove locally stored data
-* Local data is not automatically synchronized between devices
-
-Authentication and optional administrative infrastructure can use Supabase when configured.
+</td>
+</tr>
+</table>
 
 ---
 
-## Design
+# 03 — The Decode Workspace
 
-PRESTIGE follows a restrained technical product philosophy:
+The Decode Workspace is the core of PRESTIGE.
 
-* Minimal interface
-* Precise typography
-* Clear information hierarchy
-* Responsive layouts
-* Dark and light themes
-* Subtle motion
-* Technical visual language
-* No unnecessary gamification
+It provides a controlled environment for entering ciphertext, selecting a transformation, configuring its parameters, inspecting the result, and generating an investigation record.
 
-The Dashboard uses an ambient computational background while keeping the primary workspace readable and functional.
+The workspace deliberately separates:
 
----
+**Input**
 
-## Technology
+from
 
-| Layer            | Technology            |
-| ---------------- | --------------------- |
-| UI               | React                 |
-| Language         | TypeScript            |
-| Build            | Vite                  |
-| Styling          | Tailwind CSS          |
-| Motion           | Framer Motion         |
-| Icons            | Lucide React          |
-| Reports          | jsPDF / html2canvas   |
-| Persistence      | Browser Local Storage |
-| Optional Backend | Supabase              |
-| Deployment       | Vercel                |
+**Transformation**
+
+from
+
+**Result**
+
+from
+
+**Evidence**
+
+so that an investigation remains understandable after the decoding session is finished.
 
 ---
 
-## Architecture
+# 04 — Cryptanalysis
+
+PRESTIGE includes deterministic statistical analysis for supported investigations.
+
+### Frequency Analysis
+
+Letter distributions can be inspected to identify structural characteristics of the input.
+
+### Index of Coincidence
+
+PRESTIGE calculates the Index of Coincidence using:
+
+```text
+Σ fi(fi − 1)
+─────────────
+N(N − 1)
+```
+
+where:
+
+* `fi` = frequency of character `i`
+* `N` = total number of analyzed letters
+
+### Chi-Squared Analysis
+
+Observed letter frequencies can be compared against reference English unigram frequencies using a chi-squared statistic.
+
+These values are presented as **analysis measurements**, not as automatic proof of a particular cipher or plaintext language.
+
+Short ciphertexts can produce statistically weak evidence, and PRESTIGE preserves that distinction.
+
+---
+
+# 05 — Technical Reports
+
+A PRESTIGE report is designed as a technical cryptanalysis record rather than a generic AI-generated summary.
+
+Each report can contain:
+
+```text
+REPORT IDENTITY
+        ↓
+EXECUTIVE SUMMARY
+        ↓
+INPUT ARTIFACT
+        ↓
+CIPHER CONFIGURATION
+        ↓
+CRYPTANALYSIS METHOD
+        ↓
+STATISTICAL ANALYSIS
+        ↓
+DECODING RESULT
+        ↓
+TRANSFORMATION VERIFICATION
+        ↓
+TECHNICAL METADATA
+        ↓
+CONCLUSION
+```
+
+Reports are generated from the actual investigation state.
+
+They do not rely on fictional analysis, placeholder values, or generic narrative filler.
+
+---
+
+# 06 — Verification
+
+PRESTIGE treats verification as part of the decoding process.
+
+For supported transformations, the system can re-encode the resulting plaintext using the configured forward transformation and compare it against the original ciphertext.
+
+Conceptually:
+
+```text
+Ciphertext
+    │
+    │ decode
+    ▼
+Plaintext
+    │
+    │ encode
+    ▼
+Reconstructed Ciphertext
+    │
+    └──────────────► Exact comparison
+```
+
+When the reconstructed ciphertext matches the original input, the report can record the transformation as verified.
+
+---
+
+# 07 — Reports That Stay Yours
+
+PRESTIGE follows a **local-first** data model.
+
+Your investigation workspace and report contents are stored in the browser.
+
+That means:
+
+* Reports remain available after refresh
+* Investigations persist in the same browser
+* PDF generation works locally
+* Markdown export works locally
+* TXT export works locally
+* Report contents do not need to be uploaded to a remote database
+
+Local storage is browser-specific.
+
+It is not a synchronization service between devices.
+
+Clearing browser storage can remove locally stored data.
+
+PRESTIGE does not claim browser local storage is encrypted or suitable for storing sensitive secrets.
+
+---
+
+# 08 — Optional Cloud Infrastructure
+
+PRESTIGE can use **Supabase** for application infrastructure without moving private report contents into the cloud.
 
 ```text
                     PRESTIGE
-                       │
-        ┌──────────────┴──────────────┐
-        │                             │
-   React / Vite                 Local Browser
-        │                             │
-        │                       Investigations
-        │                       Reports
-        │                       Preferences
-        │
-        ├──────── Decoder
-        ├──────── Analysis
-        ├──────── Reports
-        ├──────── History
-        ├──────── Challenges
-        ├──────── Profile
-        └──────── Settings
-                       │
-                 Optional Supabase
-                       │
-                Authentication
-                Account Records
-                Admin Telemetry
+                        │
+            ┌───────────┴───────────┐
+            │                       │
+       LOCAL-FIRST              SUPABASE
+            │                       │
+     ┌──────┼──────┐          ┌─────┼─────┐
+     │      │      │          │     │     │
+   Reports  Work   Exports   Auth  Users  Admin
+   Data     space             │   Activity
+                              │
+                         Audit Metadata
 ```
 
-The application is designed so that local report generation remains functional even when optional remote services are unavailable.
+Supabase can provide:
+
+* Authentication
+* Account records
+* Login activity
+* Report-generation metadata
+* Administrative audit records
+* Admin dashboard data
+
+The administrative layer is intentionally separated from private report content.
 
 ---
 
-## Running Locally
+# 09 — Admin
+
+PRESTIGE includes an administrative architecture designed around operational visibility rather than access to private investigations.
+
+Administrative information can include:
+
+### Accounts
+
+* Registered users
+* Account creation
+* Account status
+* First login
+* Last login
+
+### Authentication
+
+* Successful logins
+* Failed login attempts
+* Login count
+* Recent activity
+
+### Reports
+
+* Reports generated
+* Reports per user
+* Cipher types
+* Generation timestamps
+* Verification status
+
+### Audit
+
+* Account events
+* Authentication events
+* Report events
+* Administrative actions
+
+The Admin layer should never expose passwords, password hashes, session tokens, or private report contents.
+
+---
+
+# 10 — Design Philosophy
+
+PRESTIGE is deliberately restrained.
+
+The interface is built around:
+
+**Clarity**
+
+Information should be immediately understandable.
+
+**Precision**
+
+Technical information should be represented accurately.
+
+**Hierarchy**
+
+The interface should communicate what matters first.
+
+**Continuity**
+
+An investigation should remain coherent from input to final report.
+
+**Restraint**
+
+Visual effects should support the workspace rather than compete with it.
+
+There are no unnecessary XP systems, levels, streaks, or artificial progression mechanics.
+
+---
+
+# 11 — Interface
+
+PRESTIGE supports:
+
+* Dark mode
+* Light mode
+* Responsive layouts
+* Keyboard-friendly interactions
+* Technical monospace data presentation
+* Subtle motion
+* Focused information architecture
+* Responsive mobile layouts
+
+The Dashboard includes an ambient computational background while preserving foreground readability and interaction.
+
+---
+
+# 12 — Technology
+
+<div align="center">
+
+| Technology        | Role                                    |
+| :---------------- | :-------------------------------------- |
+| **React 18**      | Application interface                   |
+| **TypeScript**    | Type-safe application logic             |
+| **Vite**          | Development & production build          |
+| **Tailwind CSS**  | Interface styling                       |
+| **Framer Motion** | Motion & interaction                    |
+| **Lucide React**  | Interface icons                         |
+| **jsPDF**         | PDF generation                          |
+| **html2canvas**   | Document rendering                      |
+| **Supabase**      | Authentication & backend infrastructure |
+| **Vercel**        | Deployment                              |
+
+</div>
+
+---
+
+# 13 — Architecture
+
+```text
+┌───────────────────────────────────────────────────────────┐
+│                       PRESTIGE                            │
+│                                                           │
+│                    React + TypeScript                     │
+│                                                           │
+├───────────────────────────────────────────────────────────┤
+│                                                           │
+│  Dashboard     Decoder     Reports     History     FAQ    │
+│                                                           │
+├───────────────────────────────────────────────────────────┤
+│                                                           │
+│                    APPLICATION CORE                       │
+│                                                           │
+│   Cipher Engines   Analysis   Verification   Reporting    │
+│                                                           │
+├───────────────────────────────────────────────────────────┤
+│                                                           │
+│                     LOCAL-FIRST DATA                      │
+│                                                           │
+│   Investigations   Reports   Preferences   Workspace      │
+│                                                           │
+├───────────────────────────────────────────────────────────┤
+│                                                           │
+│                    OPTIONAL SUPABASE                      │
+│                                                           │
+│      Authentication   Profiles   Audit   Admin Data       │
+│                                                           │
+└───────────────────────────────────────────────────────────┘
+```
+
+---
+
+# 14 — Project Structure
+
+```text
+PRESTIGE/
+│
+├── public/
+│
+├── src/
+│   ├── components/
+│   │   ├── features/
+│   │   ├── layout/
+│   │   └── ui/
+│   │
+│   ├── hooks/
+│   ├── pages/
+│   ├── services/
+│   ├── types/
+│   ├── utils/
+│   ├── config/
+│   │
+│   └── App.tsx
+│
+├── index.html
+├── package.json
+├── tailwind.config.js
+├── vite.config.ts
+├── vercel.json
+└── README.md
+```
+
+---
+
+# 15 — Run PRESTIGE
 
 Clone the repository:
 
@@ -168,13 +505,13 @@ Install dependencies:
 npm install
 ```
 
-Start the development server:
+Start development:
 
 ```bash
 npm run dev
 ```
 
-Build for production:
+Create a production build:
 
 ```bash
 npm run build
@@ -182,81 +519,128 @@ npm run build
 
 ---
 
-## Deployment
+# 16 — Environment
 
-PRESTIGE is designed for deployment on Vercel.
+If Supabase is enabled, configure:
 
-Build command:
+```env
+VITE_SUPABASE_URL=
+VITE_SUPABASE_ANON_KEY=
+```
+
+Never place service-role credentials or database passwords in the frontend.
+
+Keep secrets outside version control.
+
+---
+
+# 17 — Deployment
+
+PRESTIGE is designed for Vercel.
+
+```text
+Repository
+    │
+    ▼
+  Vercel
+    │
+    ▼
+Production PRESTIGE
+```
+
+Production build:
 
 ```bash
 npm run build
 ```
 
-Output directory:
+Output:
 
 ```text
-dist
+dist/
 ```
 
-SPA routing is configured through `vercel.json`.
+The application uses SPA routing with the appropriate Vercel rewrite configuration.
 
 ---
 
-## Data & Privacy
+# 18 — Engineering Principles
 
-PRESTIGE is local-first.
-
-Investigation and report content is stored in the browser rather than automatically uploaded to a cloud database.
-
-If Supabase is configured, it is used for application infrastructure such as authentication and administrative activity metadata.
-
-Administrative telemetry is intentionally separated from private report content.
-
-PRESTIGE does not claim that local browser storage provides encryption or protection suitable for sensitive secrets.
-
----
-
-## Project Structure
+PRESTIGE follows several engineering rules:
 
 ```text
-src/
-├── components/
-├── hooks/
-├── pages/
-├── services/
-├── types/
-├── utils/
-├── config/
-└── App.tsx
+No destructive migrations.
+
+No hardcoded credentials.
+
+No fake statistics.
+
+No fabricated cryptanalysis.
+
+No unnecessary backend dependency.
+
+No private report upload by default.
+
+No hidden authentication shortcuts.
+
+No unrelated UI rewrites.
+
+No unnecessary complexity.
 ```
 
----
+When functionality can remain local, it remains local.
 
-## Creator
-
-### A.J. Pardhiv
-
-B.Tech — Artificial Intelligence & Data Science
-
-Interested in:
-
-* Artificial Intelligence
-* Software Engineering
-* Cryptography
-* Product Engineering
-* Human-Centered Interfaces
+When server infrastructure is required, it is isolated behind explicit application boundaries.
 
 ---
 
-## License
+# 19 — Creator
 
-This project is currently maintained as a personal software project.
+<div align="center">
 
-See the repository for the applicable project terms.
+## A.J. Pardhiv
+
+**Artificial Intelligence & Data Science**
+
+Building software at the intersection of:
+
+**AI · Cryptography · Engineering · Product Design**
+
+</div>
 
 ---
 
-<p align="center">
-  <strong>PRESTIGE</strong><br>
-  Cipher Intelligence System
-</p>
+# 20 — Status
+
+PRESTIGE is an actively developed software project.
+
+The current system focuses on:
+
+* Cipher decoding
+* Cryptanalysis
+* Investigation workflows
+* Technical reporting
+* Local-first persistence
+* Authentication infrastructure
+* Administrative observability
+
+---
+
+<div align="center">
+
+<br />
+
+# PRESTIGE
+
+### Cipher Intelligence System
+
+**Precision over noise.**
+
+<br />
+
+Built by **A.J. Pardhiv**
+
+<br />
+
+</div>
+faFAA
