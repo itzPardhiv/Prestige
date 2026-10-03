@@ -264,27 +264,15 @@ export const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
 
           {/* Action */}
           <div className="py-0.5">
-            {user?.role === 'ADMIN' ? (
-              <button
-                type="button"
-                role="menuitem"
-                onClick={() => handleItemClick(onSignOut)}
-                className="w-full px-4 py-2 text-xs text-left text-red-600 dark:text-red-400 hover:bg-red-500/10 flex items-center gap-2.5 transition-colors font-medium"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-                <span>Exit Admin Session</span>
-              </button>
-            ) : (
-              <button
-                type="button"
-                role="menuitem"
-                onClick={() => handleItemClick(() => onSelectTab('admin'))}
-                className="w-full px-4 py-2 text-xs text-left text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 flex items-center gap-2.5 transition-colors font-medium"
-              >
-                <Lock className="w-3.5 h-3.5" />
-                <span>Admin Login</span>
-              </button>
-            )}
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => handleItemClick(onSignOut)}
+              className="w-full px-4 py-2 text-xs text-left text-red-600 dark:text-red-400 hover:bg-red-500/10 flex items-center gap-2.5 transition-colors font-medium"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>{user?.role === 'ADMIN' ? 'Exit Admin Session' : 'Sign Out'}</span>
+            </button>
           </div>
         </motion.div>
       )}

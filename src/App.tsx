@@ -10,6 +10,7 @@ import { ReportsPage } from './pages/ReportsPage';
 import { ArchivePage } from './pages/ArchivePage';
 import { ProfilePage } from './pages/ProfilePage';
 import { FAQPage } from './pages/FAQPage';
+import { AuthPage } from './pages/AuthPage';
 import { AdminLoginPage } from './pages/AdminLoginPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
@@ -66,6 +67,7 @@ export function App() {
     if (initialPath === '/archive') return 'archive';
     return 'dashboard';
   });
+  const [publicFaqView, setPublicFaqView] = useState<boolean>(() => initialIsFaq);
   const [isResetPasswordView, setIsResetPasswordView] = useState<boolean>(() => initialIsResetPassword);
   const [activeChallenge, setActiveChallenge] = useState<Challenge>(INITIAL_CHALLENGES[1]); // Default Challenge 07
   const [isCompilingReport, setIsCompilingReport] = useState<boolean>(false);
@@ -114,12 +116,16 @@ export function App() {
   // User state and real authentication store
   const {
     user,
+    isAuthenticated,
     login,
+    signup,
+    demoLogin,
     logout,
     addXp,
     recordReportGenerated,
     updateUsername,
     updatePassword,
+    resetPasswordLocal,
   } = useUserStore();
 
   // Synchronize browser history for /faq and /admin routes
@@ -154,14 +160,21 @@ export function App() {
 
       if (isResetRoute) {
         setIsResetPasswordView(true);
+        setPublicFaqView(false);
       } else if (isFaq) {
         setIsResetPasswordView(false);
-        setActiveTab('faq');
+        if (isAuthenticated) {
+          setActiveTab('faq');
+        } else {
+          setPublicFaqView(true);
+        }
       } else if (isAdminRoute) {
         setIsResetPasswordView(false);
+        setPublicFaqView(false);
         setActiveTab('admin');
       } else {
         setIsResetPasswordView(false);
+        setPublicFaqView(false);
         if (currentPath === '/challenges') setActiveTab('challenges');
         else if (currentPath === '/decode') setActiveTab('decode');
         else if (currentPath === '/reports') setActiveTab('reports');
@@ -174,7 +187,7 @@ export function App() {
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [activeTab]);
+  }, [isAuthenticated, activeTab]);
 
   const {
     folders,
@@ -314,6 +327,7 @@ export function App() {
             onClick={() => {
               window.history.pushState({}, '', '/');
               setIsNotFound(false);
+              setPublicFaqView(false);
               setActiveTab('dashboard');
             }}
             className="w-full py-2.5 px-4 rounded-md bg-brand-500 hover:bg-brand-600 text-white font-semibold text-xs transition-colors shadow-xs"
@@ -325,7 +339,83 @@ export function App() {
     );
   }
 
-  // MAIN APPLICATION EXPERIENCE (Unrestricted visitor access, compulsory admin login)
+  // 1. PUBLIC EXPERIENCE / COMPULSORY AUTHENTICATION
+  if (!isAuthenticated) {
+    if (publicFaqView) {
+      return (
+        <div className="min-h-screen flex flex-col bg-surface-canvas text-content-primary antialiased transition-colors">
+          {!bootCompleted && <TerminalDemo onComplete={handleBootComplete} />}
+          <main className="flex-1 px-4 sm:px-6 lg:px-8 py-8">
+            <FAQPage
+              isAuthenticated={false}
+              onBack={() => {
+                setPublicFaqView(false);
+                window.history.pushState({}, '', '/');
+              }}
+            />
+          </main>
+          <AnimatedFooter
+            onSelectTab={() => {}}
+            onOpenTerms={() => setIsTermsOpen(true)}
+            onScrollToFaq={() => {}}
+            onScrollToCreator={() => {}}
+          />
+          <TermsPoliciesModal
+            isOpen={isTermsOpen}
+            onClose={() => setIsTermsOpen(false)}
+          />
+        </div>
+      );
+    }
+
+    if (isResetPasswordView) {
+      return (
+        <div className="min-h-screen flex flex-col bg-surface-canvas text-content-primary antialiased transition-colors">
+          {!bootCompleted && <TerminalDemo onComplete={handleBootComplete} />}
+          <main className="flex-1">
+            <ResetPasswordPage
+              defaultEmail={user?.email}
+              onUpdatePassword={async (newPassword, email) => {
+                const res = await updatePassword(newPassword, email);
+                return res;
+              }}
+              onNavigateHome={() => {
+                setIsResetPasswordView(false);
+                window.history.pushState({}, '', '/');
+              }}
+              darkMode={darkMode}
+            />
+          </main>
+          <AnimatedFooter
+            onSelectTab={() => {}}
+            onOpenTerms={() => setIsTermsOpen(true)}
+            onScrollToFaq={() => {}}
+            onScrollToCreator={() => {}}
+          />
+        </div>
+      );
+    }
+
+    return (
+      <>
+        {!bootCompleted && <TerminalDemo onComplete={handleBootComplete} />}
+        <AuthPage
+          onLogin={login}
+          onSignup={signup}
+          onResetPasswordLocal={resetPasswordLocal}
+          onDemoLogin={demoLogin}
+          onOpenFaq={() => {
+            setPublicFaqView(true);
+            window.history.pushState({}, '', '/faq');
+          }}
+          darkMode={darkMode}
+          onToggleDarkMode={toggleDarkMode}
+        />
+      </>
+    );
+  }
+
+  // 2. AUTHENTICATED EXPERIENCE
   return (
     <div className="min-h-screen flex flex-col bg-surface-canvas text-content-primary antialiased selection:bg-brand-500/20 selection:text-brand-500 transition-colors">
       {/* Terminal Boot Sequence (runs once per session or on manual replay) */}
