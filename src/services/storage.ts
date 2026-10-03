@@ -16,11 +16,11 @@ export const STORAGE_KEYS = {
 
 // Default starter profile
 export const DEFAULT_USER_PROFILE: UserProfile = {
-  id: 'learner-alpha-09',
-  username: 'Alex Morgan',
-  name: 'Alex Morgan',
-  email: 'alex@prestige.edu',
-  callsign: 'ALEX-09',
+  id: 'learner-alpha-01',
+  username: 'User / Learner',
+  name: 'User / Learner',
+  email: 'learner@prestige.local',
+  callsign: 'LEARNER-01',
   avatarSeed: 'learner-default',
   stats: {
     codesDecoded: 4,
@@ -145,11 +145,13 @@ class StorageService {
       const data = localStorage.getItem(STORAGE_KEYS.USER_PROFILE);
       if (!data) return DEFAULT_USER_PROFILE;
       const profile: UserProfile = JSON.parse(data);
-      if (profile.username === 'Agent Cipher' || profile.username === 'Agent') {
+      if (profile.username === 'Agent Cipher' || profile.username === 'Agent' || profile.username === 'Alex Morgan' || profile.name === 'Alex Morgan') {
         profile.username = DEFAULT_USER_PROFILE.username;
+        profile.name = DEFAULT_USER_PROFILE.name;
+        profile.email = DEFAULT_USER_PROFILE.email;
         this.saveUserProfile(profile);
       }
-      if (profile.callsign === 'SPECTRE-09' || profile.callsign?.includes('SPECTRE')) {
+      if (profile.callsign === 'SPECTRE-09' || profile.callsign?.includes('SPECTRE') || profile.callsign === 'ALEX-09') {
         profile.callsign = DEFAULT_USER_PROFILE.callsign;
         this.saveUserProfile(profile);
       }

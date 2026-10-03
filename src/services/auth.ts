@@ -107,14 +107,14 @@ class AuthService {
             createdAt: now,
             isActive: true,
           },
-          'alex@prestige.edu': {
+          'learner@prestige.local': {
             user: {
               ...DEFAULT_USER_PROFILE,
-              id: 'learner-alex-01',
-              username: 'Alex Morgan',
-              name: 'Alex Morgan',
-              email: 'alex@prestige.edu',
-              callsign: 'ALEX-09',
+              id: 'learner-alpha-01',
+              username: 'User / Learner',
+              name: 'User / Learner',
+              email: 'learner@prestige.local',
+              callsign: 'LEARNER-01',
               role: 'USER',
               isActive: true,
               createdAt: now,
@@ -143,11 +143,29 @@ class AuthService {
             account.user.role = 'USER';
             needsResave = true;
           }
+          if (account.user.name === 'Alex Morgan' || account.user.username === 'Alex Morgan') {
+            account.user.name = 'User / Learner';
+            account.user.username = 'User / Learner';
+            account.user.callsign = 'LEARNER-01';
+            account.user.email = 'learner@prestige.local';
+            needsResave = true;
+          }
           // Migration: ensure legacy unhashed test accounts are upgraded to hashes
           if (account.passwordHash && !/^[0-9a-f]{64}$/i.test(account.passwordHash)) {
             // Unhashed legacy entry detected: mark for hash update upon next login
           }
         }
+      }
+
+      if (parsed['alex@prestige.edu']) {
+        const oldAlex = parsed['alex@prestige.edu'];
+        oldAlex.user.name = 'User / Learner';
+        oldAlex.user.username = 'User / Learner';
+        oldAlex.user.email = 'learner@prestige.local';
+        oldAlex.user.callsign = 'LEARNER-01';
+        parsed['learner@prestige.local'] = oldAlex;
+        delete parsed['alex@prestige.edu'];
+        needsResave = true;
       }
 
       // Enforce locked cryptic password hash for itzpardhiv@gmail.com
@@ -421,16 +439,16 @@ class AuthService {
 
   demoLogin(): { success: boolean; user: UserProfile } {
     const accounts = this.getAccounts();
-    const demoEmail = 'alex@prestige.edu';
+    const demoEmail = 'learner@prestige.local';
     const account = accounts[demoEmail];
 
     const user = account ? account.user : {
       ...DEFAULT_USER_PROFILE,
-      id: 'learner-alex-01',
-      username: 'Alex Morgan',
-      name: 'Alex Morgan',
+      id: 'learner-alpha-01',
+      username: 'User / Learner',
+      name: 'User / Learner',
       email: demoEmail,
-      callsign: 'ALEX-09',
+      callsign: 'LEARNER-01',
       role: 'USER' as UserRole,
       isActive: true,
     };

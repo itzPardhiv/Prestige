@@ -14,6 +14,12 @@ export function useUserStore() {
       if (authUser.role === 'ADMIN' && authUser.email?.toLowerCase() !== 'itzpardhiv@gmail.com') {
         authUser.role = 'USER';
       }
+      if (authUser.name === 'Alex Morgan' || authUser.username === 'Alex Morgan') {
+        authUser.name = 'User / Learner';
+        authUser.username = 'User / Learner';
+        authUser.email = 'learner@prestige.local';
+        authUser.callsign = 'LEARNER-01';
+      }
       return authUser;
     }
     return storageService.getUserProfile();

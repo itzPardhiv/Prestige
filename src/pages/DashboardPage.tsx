@@ -27,7 +27,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   darkMode,
 }) => {
   const stats = user.stats;
-  const displayName = user.name || user.username || 'Learner';
+  const displayName = (!user.name || user.name === 'Alex Morgan' || user.username === 'Alex Morgan')
+    ? (user.role === 'ADMIN' ? (user.name || 'Pardhiv') : 'User / Learner')
+    : user.name || user.username || 'User / Learner';
 
   // Determine dark mode with fallback to document root class
   const isDark = typeof darkMode === 'boolean'

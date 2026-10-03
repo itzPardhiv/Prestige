@@ -24,14 +24,19 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
     setIsEditing(false);
   };
 
-  const displayName = user.name || user.username || 'Learner';
-  const displayEmail = user.email || (user.username ? `${user.username.toLowerCase().replace(/\s+/g, '')}@prestige.local` : 'learner@prestige.local');
+  const displayName = (!user.name || user.name === 'Alex Morgan' || user.username === 'Alex Morgan')
+    ? (user.role === 'ADMIN' ? (user.name || 'Pardhiv') : 'User / Learner')
+    : user.name || user.username || 'User / Learner';
+  const displayEmail = user.email && user.email !== 'alex@prestige.edu'
+    ? user.email
+    : (user.role === 'ADMIN' ? 'itzpardhiv@gmail.com' : 'learner@prestige.local');
   const initials = displayName
     .split(' ')
+    .filter((w) => w !== '/')
     .map((w) => w.charAt(0))
     .join('')
     .toUpperCase()
-    .slice(0, 2) || 'LE';
+    .slice(0, 2) || (user.role === 'ADMIN' ? 'PA' : 'UL');
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 font-sans py-4">
