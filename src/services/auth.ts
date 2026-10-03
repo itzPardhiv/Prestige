@@ -66,9 +66,8 @@ export async function hashPassword(password: string): Promise<string> {
 // Produced by hashPassword('password123') with SALT_PREFIX
 const DEFAULT_SEED_HASH = '5afea9ed3225a508e854ef1b7606ddbb84f475726c4f04919c72b861f3deeb13';
 
-// Pre-computed SHA-256 hash for authoritative admin account ('%$OP*')
-// Produced by hashPassword('%$OP*') with SALT_PREFIX
-// Cryptic password locked so unauthorized logins cannot guess or access it
+// Authoritative single-admin hash for itzpardhiv@gmail.com
+// Cryptographically verified one-way SHA-256 digest
 const ADMIN_SEED_HASH = '7e9c6fab9c114d3eb94663b64fdd07b72f80f42c885f9e59f4bbb2ea77544f7e';
 
 class AuthService {

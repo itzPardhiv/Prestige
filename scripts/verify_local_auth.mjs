@@ -110,9 +110,12 @@ async function run() {
   const normalLoginRes = await authService.login('itzpardhiv@gmail.com', 'password123');
   assert(!normalLoginRes.success, 'Standard password login fails for itzpardhiv@gmail.com');
 
-  const adminLoginRes = await authService.login('itzpardhiv@gmail.com', '%$OP*');
-  assert(adminLoginRes.success, 'Login succeeds for itzpardhiv@gmail.com with cryptic password %$OP*');
-  assert(adminLoginRes.user?.role === 'ADMIN', 'itzpardhiv@gmail.com has role = ADMIN');
+  const adminPass = process.env.ADMIN_TEST_PASS || '';
+  if (adminPass) {
+    const adminLoginRes = await authService.login('itzpardhiv@gmail.com', adminPass);
+    assert(adminLoginRes.success, 'Login succeeds for itzpardhiv@gmail.com with admin credentials');
+    assert(adminLoginRes.user?.role === 'ADMIN', 'itzpardhiv@gmail.com has role = ADMIN');
+  }
   const adminUser = authService.getCurrentUser();
   assert(adminUser?.role === 'ADMIN', 'Current active user role is ADMIN');
 

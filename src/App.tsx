@@ -548,12 +548,15 @@ export function App() {
 
             {activeTab === 'admin' && (
               <AnimatedPage key="admin">
-                {user?.role === 'ADMIN' ? (
+                {user?.role === 'ADMIN' && (typeof window !== 'undefined' && sessionStorage.getItem('prestige_admin_session_active') === 'true') ? (
                   <AdminDashboardPage
                     user={user}
                     darkMode={darkMode}
                     onNavigateHome={() => handleSelectTab('dashboard')}
                     onSignOut={async () => {
+                      if (typeof window !== 'undefined') {
+                        sessionStorage.removeItem('prestige_admin_session_active');
+                      }
                       await logout();
                       handleSelectTab('dashboard');
                     }}

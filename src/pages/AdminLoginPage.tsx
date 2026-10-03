@@ -33,8 +33,25 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  const [failedAttempts, setFailedAttempts] = useState<number>(0);
+  const [lockoutTimer, setLockoutTimer] = useState<number>(0);
+
+  // Lockout countdown effect
+  React.useEffect(() => {
+    if (lockoutTimer <= 0) return;
+    const interval = setInterval(() => {
+      setLockoutTimer((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [lockoutTimer]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (lockoutTimer > 0) {
+      setErrorMessage(`Too many failed attempts. Terminal locked for ${lockoutTimer} seconds.`);
+      return;
+    }
+
     setErrorMessage(null);
     setSuccessMessage(null);
 
@@ -55,10 +72,21 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({
           setIsLoading(false);
           return;
         }
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('prestige_admin_session_active', 'true');
+        }
+        setFailedAttempts(0);
         setSuccessMessage('Administrator clearance verified. Initializing operations console...');
         soundService.playRadarBeep();
       } else {
-        setErrorMessage(res.error || 'Authentication failed. Invalid administrator credentials.');
+        const nextFailures = failedAttempts + 1;
+        setFailedAttempts(nextFailures);
+        if (nextFailures >= 5) {
+          setLockoutTimer(60);
+          setErrorMessage('Multiple failed clearance attempts detected. Administrative portal temporarily locked for 60 seconds.');
+        } else {
+          setErrorMessage(res.error || `Authentication failed. Invalid administrator credentials (${5 - nextFailures} attempts remaining).`);
+        }
       }
     } catch {
       setErrorMessage('An unexpected error occurred during administrative verification.');
@@ -203,13 +231,18 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || lockoutTimer > 0}
               className="w-full mt-2 py-2.5 px-4 rounded-lg bg-amber-500 hover:bg-amber-600 disabled:bg-amber-500/50 text-zinc-950 font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <>
                   <div className="w-3.5 h-3.5 border-2 border-zinc-950 border-t-transparent rounded-full animate-spin" />
                   <span>Verifying Clearance...</span>
+                </>
+              ) : lockoutTimer > 0 ? (
+                <>
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>Terminal Locked ({lockoutTimer}s)</span>
                 </>
               ) : (
                 <>
