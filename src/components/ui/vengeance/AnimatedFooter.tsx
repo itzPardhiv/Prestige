@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavTab } from './SpotlightNavbar';
 import { creator } from '../../../config/creator';
-import { BookOpen, Mail, ExternalLink } from 'lucide-react';
+import { BookOpen, Mail, ExternalLink, Lock } from 'lucide-react';
 
 const LinkedInIcon = ({ className }: { className?: string }) => (
   <svg className={className} fill="currentColor" viewBox="0 0 24 24">
@@ -63,6 +63,15 @@ export const AnimatedFooter: React.FC<AnimatedFooterProps> = ({
               <li>
                 <button
                   type="button"
+                  onClick={() => onSelectTab && onSelectTab('challenges')}
+                  className="hover:text-content-primary transition-colors text-left"
+                >
+                  Challenges
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
                   onClick={() => onSelectTab && onSelectTab('reports')}
                   className="hover:text-content-primary transition-colors text-left"
                 >
@@ -76,6 +85,16 @@ export const AnimatedFooter: React.FC<AnimatedFooterProps> = ({
                   className="hover:text-content-primary transition-colors text-left"
                 >
                   Saved History
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  onClick={() => onSelectTab && onSelectTab('admin')}
+                  className="hover:text-amber-500 transition-colors text-left inline-flex items-center gap-1.5"
+                >
+                  <Lock className="w-3 h-3 text-content-tertiary" />
+                  <span>Admin Portal</span>
                 </button>
               </li>
             </ul>

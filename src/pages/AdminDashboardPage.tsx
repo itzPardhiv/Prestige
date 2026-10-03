@@ -41,6 +41,7 @@ interface AdminDashboardPageProps {
   user: UserProfile;
   darkMode?: boolean;
   onNavigateHome: () => void;
+  onSignOut?: () => void;
 }
 
 type AdminTab = 'users' | 'logins' | 'reports' | 'audit';
@@ -49,6 +50,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   user,
   darkMode = true,
   onNavigateHome,
+  onSignOut,
 }) => {
   const isAdmin = user?.role === 'ADMIN';
 
@@ -366,8 +368,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 shrink-0">
-          <span className="text-[11px] font-mono text-content-tertiary hidden sm:inline">
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-[11px] font-mono text-content-tertiary hidden lg:inline">
             Updated {lastRefreshedAt.toLocaleTimeString()}
           </span>
           <button
@@ -380,12 +382,28 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               else if (activeTab === 'audit') fetchAuditLogs();
             }}
             disabled={isStatsLoading}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-surface-secondary hover:bg-surface-elevated text-content-primary text-xs font-medium border border-border transition-colors disabled:opacity-60"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-surface-secondary hover:bg-surface-elevated text-content-primary text-xs font-medium border border-border transition-colors disabled:opacity-60"
             title="Refresh database operational metrics"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isStatsLoading ? 'animate-spin' : ''}`} />
             <span>Sync</span>
           </button>
+          <button
+            onClick={onNavigateHome}
+            className="px-2.5 py-1.5 rounded-md bg-surface-secondary hover:bg-surface-elevated text-content-secondary hover:text-content-primary text-xs font-medium border border-border transition-colors"
+            title="Return to Public Workspace"
+          >
+            Workspace
+          </button>
+          {onSignOut && (
+            <button
+              onClick={onSignOut}
+              className="px-2.5 py-1.5 rounded-md bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 text-xs font-medium border border-red-500/20 transition-colors"
+              title="Sign Out of Administrator Session"
+            >
+              Exit Admin
+            </button>
+          )}
         </div>
       </div>
 

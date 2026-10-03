@@ -41,13 +41,13 @@ export const CreatorSection: React.FC = () => {
 
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
         {/* Creator Image Container with fixed dimensions & graceful fallback */}
-        <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden shrink-0 border border-border shadow-sm bg-gradient-to-br from-brand-500/20 via-surface-secondary to-surface-canvas flex items-center justify-center">
+        <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden shrink-0 border border-border shadow-sm bg-gradient-to-br from-brand-500/20 via-surface-secondary to-surface-canvas flex items-center justify-center">
           {hasValidImage ? (
             <img
               src={creator.image}
               alt={`Portrait of ${creator.name}`}
               onError={() => setImageError(true)}
-              className="w-full h-full object-cover rounded-2xl transition-opacity duration-300"
+              className="w-full h-full object-cover object-top rounded-2xl transition-opacity duration-300"
               loading="lazy"
             />
           ) : (
@@ -76,6 +76,11 @@ export const CreatorSection: React.FC = () => {
             <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/20">
               {creator.role}
             </span>
+            {creator.tagline && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-surface-secondary text-content-secondary border border-border">
+                {creator.tagline}
+              </span>
+            )}
           </div>
 
           <p className="text-xs text-content-secondary leading-relaxed max-w-xl">

@@ -38,10 +38,13 @@ export interface UserProfile {
   callsign: string;
   avatar?: string;
   avatarSeed: string;
-  level?: string;
-  progress?: number;
   role?: UserRole;
   isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  firstLoginAt?: string;
+  lastLoginAt?: string;
+  loginCount?: number;
   stats: UserStats;
   completedChallengeIds: string[];
   achievements: Achievement[];

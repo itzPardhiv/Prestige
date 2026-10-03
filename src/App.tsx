@@ -10,7 +10,7 @@ import { ReportsPage } from './pages/ReportsPage';
 import { ArchivePage } from './pages/ArchivePage';
 import { ProfilePage } from './pages/ProfilePage';
 import { FAQPage } from './pages/FAQPage';
-import { AuthPage } from './pages/AuthPage';
+import { AdminLoginPage } from './pages/AdminLoginPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { DecodingWorkspace } from './components/features/decoder/DecodingWorkspace';
@@ -34,6 +34,12 @@ import { supabaseAuthService } from './services/supabaseAuth';
 export function App() {
   // Check URL pathname for /faq, /admin, and /reset-password routing support and 404 detection
   const initialPath = typeof window !== 'undefined' ? window.location.pathname : '/';
+  
+  // If user previously landed on /login or /student, automatically route to open workspace
+  if (typeof window !== 'undefined' && (initialPath === '/login' || initialPath === '/student')) {
+    window.history.replaceState({}, '', '/');
+  }
+
   const initialIsFaq = initialPath === '/faq';
   const initialIsAdmin = initialPath === '/admin';
   const initialIsResetPassword = initialPath === '/reset-password';
@@ -42,13 +48,24 @@ export function App() {
     p === '' ||
     p === '/login' ||
     p === '/student' ||
+    p === '/challenges' ||
+    p === '/decode' ||
+    p === '/reports' ||
+    p === '/archive' ||
     p === '/faq' ||
     p === '/admin' ||
     p === '/reset-password';
   const [isNotFound, setIsNotFound] = useState<boolean>(() => !isKnownPath(initialPath));
 
-  const [activeTab, setActiveTab] = useState<NavTab>(() => (initialIsFaq ? 'faq' : initialIsAdmin ? 'admin' : 'dashboard'));
-  const [publicFaqView, setPublicFaqView] = useState<boolean>(() => initialIsFaq);
+  const [activeTab, setActiveTab] = useState<NavTab>(() => {
+    if (initialIsFaq) return 'faq';
+    if (initialIsAdmin) return 'admin';
+    if (initialPath === '/challenges') return 'challenges';
+    if (initialPath === '/decode') return 'decode';
+    if (initialPath === '/reports') return 'reports';
+    if (initialPath === '/archive') return 'archive';
+    return 'dashboard';
+  });
   const [isResetPasswordView, setIsResetPasswordView] = useState<boolean>(() => initialIsResetPassword);
   const [activeChallenge, setActiveChallenge] = useState<Challenge>(INITIAL_CHALLENGES[1]); // Default Challenge 07
   const [isCompilingReport, setIsCompilingReport] = useState<boolean>(false);
@@ -97,14 +114,12 @@ export function App() {
   // User state and real authentication store
   const {
     user,
-    isAuthenticated,
     login,
-    signup,
-    demoLogin,
     logout,
     addXp,
     recordReportGenerated,
     updateUsername,
+    updatePassword,
   } = useUserStore();
 
   // Synchronize browser history for /faq and /admin routes
@@ -135,19 +150,23 @@ export function App() {
       setIsNotFound(false);
       const isFaq = currentPath === '/faq';
       const isAdminRoute = currentPath === '/admin';
+      const isResetRoute = currentPath === '/reset-password';
 
-      if (isFaq) {
-        if (isAuthenticated) {
-          setActiveTab('faq');
-        } else {
-          setPublicFaqView(true);
-        }
+      if (isResetRoute) {
+        setIsResetPasswordView(true);
+      } else if (isFaq) {
+        setIsResetPasswordView(false);
+        setActiveTab('faq');
       } else if (isAdminRoute) {
-        setPublicFaqView(false);
+        setIsResetPasswordView(false);
         setActiveTab('admin');
       } else {
-        setPublicFaqView(false);
-        if (activeTab === 'faq' || activeTab === 'admin') {
+        setIsResetPasswordView(false);
+        if (currentPath === '/challenges') setActiveTab('challenges');
+        else if (currentPath === '/decode') setActiveTab('decode');
+        else if (currentPath === '/reports') setActiveTab('reports');
+        else if (currentPath === '/archive') setActiveTab('archive');
+        else if (activeTab === 'faq' || activeTab === 'admin') {
           setActiveTab('dashboard');
         }
       }
@@ -155,7 +174,7 @@ export function App() {
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [isAuthenticated, activeTab]);
+  }, [activeTab]);
 
   const {
     folders,
@@ -295,7 +314,6 @@ export function App() {
             onClick={() => {
               window.history.pushState({}, '', '/');
               setIsNotFound(false);
-              setPublicFaqView(false);
               setActiveTab('dashboard');
             }}
             className="w-full py-2.5 px-4 rounded-md bg-brand-500 hover:bg-brand-600 text-white font-semibold text-xs transition-colors shadow-xs"
@@ -307,54 +325,7 @@ export function App() {
     );
   }
 
-  // 1. PUBLIC EXPERIENCE
-  if (!isAuthenticated) {
-    if (publicFaqView) {
-      return (
-        <div className="min-h-screen flex flex-col bg-surface-canvas text-content-primary antialiased transition-colors">
-          {!bootCompleted && <TerminalDemo onComplete={handleBootComplete} />}
-          <main className="flex-1 px-4 sm:px-6 lg:px-8 py-8">
-            <FAQPage
-              isAuthenticated={false}
-              onBack={() => {
-                setPublicFaqView(false);
-                window.history.pushState({}, '', '/');
-              }}
-            />
-          </main>
-          <AnimatedFooter
-            onSelectTab={() => {}}
-            onOpenTerms={() => setIsTermsOpen(true)}
-            onScrollToFaq={() => {}}
-            onScrollToCreator={() => {}}
-          />
-          <TermsPoliciesModal
-            isOpen={isTermsOpen}
-            onClose={() => setIsTermsOpen(false)}
-          />
-        </div>
-      );
-    }
-
-    return (
-      <>
-        {!bootCompleted && <TerminalDemo onComplete={handleBootComplete} />}
-        <AuthPage
-          onLogin={login}
-          onSignup={signup}
-          onDemoLogin={demoLogin}
-          onOpenFaq={() => {
-            setPublicFaqView(true);
-            window.history.pushState({}, '', '/faq');
-          }}
-          darkMode={darkMode}
-          onToggleDarkMode={toggleDarkMode}
-        />
-      </>
-    );
-  }
-
-  // 2. AUTHENTICATED EXPERIENCE
+  // MAIN APPLICATION EXPERIENCE (Unrestricted visitor access, compulsory admin login)
   return (
     <div className="min-h-screen flex flex-col bg-surface-canvas text-content-primary antialiased selection:bg-brand-500/20 selection:text-brand-500 transition-colors">
       {/* Terminal Boot Sequence (runs once per session or on manual replay) */}
@@ -487,27 +458,45 @@ export function App() {
 
             {activeTab === 'admin' && (
               <AnimatedPage key="admin">
-                <AdminDashboardPage
-                  user={user}
+                {user?.role === 'ADMIN' ? (
+                  <AdminDashboardPage
+                    user={user}
+                    darkMode={darkMode}
+                    onNavigateHome={() => handleSelectTab('dashboard')}
+                    onSignOut={async () => {
+                      await logout();
+                      handleSelectTab('dashboard');
+                    }}
+                  />
+                ) : (
+                  <AdminLoginPage
+                    onAdminLogin={async (email, pass) => {
+                      const res = await login(email, pass);
+                      return res;
+                    }}
+                    onNavigateHome={() => handleSelectTab('dashboard')}
+                    darkMode={darkMode}
+                  />
+                )}
+              </AnimatedPage>
+            )}
+
+            {isResetPasswordView && (
+              <AnimatedPage key="reset-password">
+                <ResetPasswordPage
+                  defaultEmail={user?.email}
+                  onUpdatePassword={async (newPassword, email) => {
+                    const res = await updatePassword(newPassword, email);
+                    return res;
+                  }}
+                  onNavigateHome={() => {
+                    setIsResetPasswordView(false);
+                    window.history.pushState({}, '', '/');
+                  }}
                   darkMode={darkMode}
-                  onNavigateHome={() => handleSelectTab('dashboard')}
                 />
               </AnimatedPage>
             )}
-          {isResetPasswordView && (
-            <AnimatedPage key="reset-password">
-              <ResetPasswordPage
-                onUpdatePassword={async (newPassword) => {
-                  const res = await supabaseAuthService.updatePassword(newPassword);
-                  return res;
-                }}
-                onNavigateHome={() => {
-                  setIsResetPasswordView(false);
-                  window.history.pushState({}, '', '/login');
-                }}
-              />
-            </AnimatedPage>
-          )}
           </AnimatePresence>
         )}
       </main>

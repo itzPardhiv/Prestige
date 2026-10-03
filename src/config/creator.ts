@@ -1,8 +1,9 @@
 export interface CreatorConfig {
   name: string;
   role: string;
+  tagline: string;
   bio: string;
-  image: string; // User will supply real photo later; empty string renders graceful placeholder
+  image: string;
   linkedin: string;
   github: string;
   email: string;
@@ -10,10 +11,11 @@ export interface CreatorConfig {
 
 export const creator: CreatorConfig = {
   name: 'A.J. Pardhiv',
-  role: 'Creator & Software Engineer',
-  bio: 'Building intuitive, interactive platforms to make cryptography, computational thinking, and cyber concepts approachable, engaging, and enjoyable for every learner.',
-  image: '',
-  linkedin: '',
-  github: '',
-  email: '',
+  role: 'B.Tech AI & Data Science Student',
+  tagline: 'Creator of PRESTIGE',
+  bio: 'B.Tech AI & Data Science student and Creator of PRESTIGE. Built as an interactive platform for learning and experimenting with cipher mathematics, cryptanalysis techniques, and computational thinking.',
+  image: '/creator.png',
+  linkedin: 'https://www.linkedin.com/in/aj-pardhiv-406a40333',
+  github: 'https://github.com/itzPardhiv',
+  email: 'itzpardhiv@gmail.com',
 };

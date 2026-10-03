@@ -37,3 +37,6 @@ scratch/
 audit_screenshots/
 audit_screenshots_v*/
 
+
+.vercel
+.env*

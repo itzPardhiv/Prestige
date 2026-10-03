@@ -6,6 +6,8 @@ import {
   Folder,
   FileText,
   ShieldCheck,
+  ShieldAlert,
+  Lock,
   LogOut,
   ChevronDown,
 } from 'lucide-react';
@@ -171,8 +173,8 @@ export const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
               <span className="font-mono text-brand-600 dark:text-brand-400 font-medium">
                 {user.callsign}
               </span>
-              <span className="font-medium text-content-tertiary">
-                Local Session
+              <span className={`font-medium ${user.role === 'ADMIN' ? 'text-amber-500 font-semibold' : 'text-content-tertiary'}`}>
+                {user.role === 'ADMIN' ? 'Admin Clearance' : 'Open Workspace'}
               </span>
             </div>
           </div>
@@ -229,15 +231,25 @@ export const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
               <span>Terms & Policies</span>
             </button>
 
-            {user?.role === 'ADMIN' && (
+            {user?.role === 'ADMIN' ? (
               <button
                 type="button"
                 role="menuitem"
                 onClick={() => handleItemClick(() => onSelectTab('admin'))}
-                className="w-full px-4 py-2 text-xs text-left text-brand-600 dark:text-brand-400 hover:bg-brand-500/10 flex items-center gap-2.5 transition-colors font-medium"
+                className="w-full px-4 py-2 text-xs text-left text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 flex items-center gap-2.5 transition-colors font-medium"
               >
-                <ShieldCheck className="w-3.5 h-3.5 text-brand-500" />
+                <ShieldAlert className="w-3.5 h-3.5 text-amber-500" />
                 <span>Admin Operations</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => handleItemClick(() => onSelectTab('admin'))}
+                className="w-full px-4 py-2 text-xs text-left text-content-secondary hover:text-amber-500 hover:bg-amber-500/10 flex items-center gap-2.5 transition-colors"
+              >
+                <Lock className="w-3.5 h-3.5 text-content-tertiary group-hover:text-amber-500" />
+                <span>Administrator Access</span>
               </button>
             )}
           </div>
@@ -245,17 +257,29 @@ export const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
           {/* Separator */}
           <div className="border-t border-black/[0.06] dark:border-white/[0.08] my-1" />
 
-          {/* Logout Action */}
+          {/* Action */}
           <div className="py-0.5">
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => handleItemClick(onSignOut)}
-              className="w-full px-4 py-2 text-xs text-left text-red-600 dark:text-red-400 hover:bg-red-500/10 flex items-center gap-2.5 transition-colors font-medium"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span>Sign Out</span>
-            </button>
+            {user?.role === 'ADMIN' ? (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => handleItemClick(onSignOut)}
+                className="w-full px-4 py-2 text-xs text-left text-red-600 dark:text-red-400 hover:bg-red-500/10 flex items-center gap-2.5 transition-colors font-medium"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Exit Admin Session</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => handleItemClick(() => onSelectTab('admin'))}
+                className="w-full px-4 py-2 text-xs text-left text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 flex items-center gap-2.5 transition-colors font-medium"
+              >
+                <Lock className="w-3.5 h-3.5" />
+                <span>Admin Login</span>
+              </button>
+            )}
           </div>
         </motion.div>
       )}

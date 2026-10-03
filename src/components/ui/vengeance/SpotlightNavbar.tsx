@@ -35,6 +35,7 @@ export const SpotlightNavbar: React.FC<SpotlightNavbarProps> = ({
   const navItems: Array<{ id: NavTab; label: string }> = [
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'decode', label: 'Decode' },
+    { id: 'challenges', label: 'Challenges' },
     { id: 'reports', label: 'Reports' },
     { id: 'archive', label: 'History' },
     { id: 'faq', label: 'FAQ' },

@@ -161,9 +161,9 @@ export const StatsCounter: React.FC<StatsCounterProps> = ({
     return () => clearInterval(interval);
   }, [isAnalyzing, shiftsLocked, targetShifts]);
 
-  // 5. MATCH CONFIDENCE:
+  // 5. STATISTICAL CORRELATION RATE:
   // When targetWordDetected / targetWordFrozen occurs, it locks immediately:
-  // "Match Confidence 98.4% ✓ DETECTED" and remains frozen while other counters continue!
+  // "Correlation Rate 98.4% ✓ DETECTED" and remains frozen while other counters continue!
   useEffect(() => {
     if (!isAnalyzing || confidenceLocked) return;
 
@@ -179,7 +179,7 @@ export const StatsCounter: React.FC<StatsCounterProps> = ({
         const step = Math.random() * 4 + 2;
         const next = Math.min(targetConfidence, prev + step);
 
-        // Midway trigger: when confidence crosses 90%, target is detected and freezes!
+        // Midway trigger: when correlation crosses 90%, target is detected and freezes!
         if (next >= targetConfidence * 0.95) {
           setConfidenceLocked(true);
           if (onTargetDetected) onTargetDetected('PRESTIGE');
@@ -246,7 +246,7 @@ export const StatsCounter: React.FC<StatsCounterProps> = ({
     },
     {
       id: 'confidence',
-      label: 'Match Confidence',
+      label: 'Correlation Rate',
       current: confidenceCount,
       target: targetConfidence,
       unit: '%',

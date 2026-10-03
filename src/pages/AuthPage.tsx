@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { ArrowRight, Lock, Mail, User, Eye, EyeOff, CheckCircle2, KeyRound } from 'lucide-react';
+import { authService } from '../services/auth';
 
 interface AuthPageProps {
   onLogin: (email: string, pass: string) => Promise<{ success: boolean; error?: string }> | { success: boolean; error?: string };
   onSignup: (name: string, email: string, pass: string) => Promise<{ success: boolean; error?: string }> | { success: boolean; error?: string };
   onRequestPasswordReset?: (email: string) => Promise<{ success: boolean; error?: string }> | { success: boolean; error?: string };
+  onResetPasswordLocal?: (email: string, newPassword: string) => Promise<{ success: boolean; error?: string }> | { success: boolean; error?: string };
   onDemoLogin?: () => void;
   onOpenFaq?: () => void;
   darkMode?: boolean;
@@ -14,7 +16,7 @@ interface AuthPageProps {
 export const AuthPage: React.FC<AuthPageProps> = ({
   onLogin,
   onSignup,
-  onRequestPasswordReset,
+  onResetPasswordLocal,
 }) => {
   const [mode, setMode] = useState<'signin' | 'signup' | 'forgot'>('signin');
   const [name, setName] = useState('');
@@ -25,35 +27,113 @@ export const AuthPage: React.FC<AuthPageProps> = ({
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Local interactive forgot-password flow states
+  const [forgotStep, setForgotStep] = useState<'find' | 'reset' | 'success'>('find');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const resetForgotFlow = () => {
+    setForgotStep('find');
+    setNewPassword('');
+    setConfirmPassword('');
+    setError(null);
+    setSuccessNotice(null);
+  };
+
+  const handleForgotSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSuccessNotice(null);
+
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail) {
+      setError('Please enter your account email address.');
+      return;
+    }
+
+    if (cleanEmail === 'itzpardhiv@gmail.com') {
+      setError('Password recovery is restricted for this administrative account.');
+      return;
+    }
+
+    if (forgotStep === 'find') {
+      setIsLoading(true);
+      try {
+        const hasAccount = authService.hasAccount(cleanEmail);
+        if (!hasAccount) {
+          setError('No account found with this email address. Please check your credentials or create a new account.');
+          setIsLoading(false);
+          return;
+        }
+        // Account located locally; advance to new password creation
+        setForgotStep('reset');
+      } catch {
+        setError('Failed to verify local account.');
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
+
+    if (forgotStep === 'reset') {
+      if (!newPassword) {
+        setError('Please enter a new password.');
+        return;
+      }
+      if (newPassword.length < 6) {
+        setError('Password must be at least 6 characters long.');
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        setError('Password confirmation does not match.');
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        let res: { success: boolean; error?: string };
+        if (onResetPasswordLocal) {
+          res = await onResetPasswordLocal(cleanEmail, newPassword);
+        } else {
+          res = await authService.resetPasswordLocal(cleanEmail, newPassword);
+        }
+
+        // Immediately wipe plaintext password strings from component memory
+        setNewPassword('');
+        setConfirmPassword('');
+
+        if (res.success) {
+          setForgotStep('success');
+        } else {
+          setError(res.error || 'Failed to update password.');
+        }
+      } catch (err: unknown) {
+        setNewPassword('');
+        setConfirmPassword('');
+        setError(err instanceof Error ? err.message : 'An error occurred while resetting password.');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (mode === 'forgot') {
+      return handleForgotSubmit(e);
+    }
+
     setError(null);
     setSuccessNotice(null);
     setIsLoading(true);
 
     try {
-      if (mode === 'forgot') {
-        const cleanEmail = email.trim().toLowerCase();
-        if (!cleanEmail) {
-          setError('Please enter your email address.');
-          setIsLoading(false);
-          return;
-        }
-
-        if (onRequestPasswordReset) {
-          await onRequestPasswordReset(cleanEmail);
-        }
-
-        // Privacy standard: neutral message prevents email enumeration
-        setSuccessNotice('If an account exists for this email, a password reset link has been sent. Please check your inbox and spam folder.');
-        setIsLoading(false);
-        return;
-      }
-
       if (mode === 'signin') {
         const res = await onLogin(email, password);
         if (!res.success) {
-          setError(res.error || 'Invalid credentials.');
+          setError(res.error || 'Invalid email or password.');
           setIsLoading(false);
         }
       } else {
@@ -92,14 +172,15 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             <div className="flex items-center justify-between border-b border-border pb-3">
               <div className="flex items-center gap-2">
                 <KeyRound className="w-4 h-4 text-brand-500" />
-                <span className="text-xs font-semibold text-content-primary">Password Recovery</span>
+                <span className="text-xs font-semibold text-content-primary">
+                  {forgotStep === 'success' ? 'Password Reset Complete' : 'Local Password Reset'}
+                </span>
               </div>
               <button
                 type="button"
                 onClick={() => {
                   setMode('signin');
-                  setError(null);
-                  setSuccessNotice(null);
+                  resetForgotFlow();
                 }}
                 className="text-xs text-brand-600 dark:text-brand-400 hover:underline font-medium"
               >
@@ -146,7 +227,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             <div className="p-3 text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-md space-y-1">
               <div className="font-semibold flex items-center gap-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                <span>Reset Link Dispatched</span>
+                <span>Notice</span>
               </div>
               <p className="leading-relaxed">{successNotice}</p>
             </div>
@@ -159,130 +240,236 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             </div>
           )}
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {mode === 'signup' && (
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-content-secondary block">
-                  Full Name
-                </label>
-                <div className="relative">
-                  <User className="w-4 h-4 text-content-tertiary absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                  <input
-                    type="text"
-                    required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Enter your full name"
-                    className="w-full bg-surface-secondary border border-border rounded-md pl-9 pr-3 py-2 text-xs text-content-primary placeholder:text-content-tertiary focus:outline-none focus:border-brand-500 transition-colors"
-                  />
-                </div>
+          {/* Forgot Password: Step 3 Success Display */}
+          {mode === 'forgot' && forgotStep === 'success' ? (
+            <div className="space-y-4 text-center py-4">
+              <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center mx-auto border border-emerald-500/20">
+                <CheckCircle2 className="w-6 h-6" />
               </div>
-            )}
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-content-secondary block">
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail className="w-4 h-4 text-content-tertiary absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@example.com"
-                  className="w-full bg-surface-secondary border border-border rounded-md pl-9 pr-3 py-2 text-xs text-content-primary placeholder:text-content-tertiary focus:outline-none focus:border-brand-500 transition-colors"
-                />
-              </div>
-              {mode === 'forgot' && (
-                <p className="text-[11px] text-content-tertiary">
-                  Enter your registered email address. If an account exists, a secure recovery link will be sent.
+              <div className="space-y-1">
+                <span className="label-eyebrow text-emerald-500">Credentials Updated</span>
+                <h2 className="text-lg font-semibold text-content-primary">Password Successfully Changed</h2>
+                <p className="text-xs text-content-secondary max-w-xs mx-auto leading-relaxed">
+                  Your new password has been cryptographically hashed (SHA-256) and saved locally. Plaintext passwords are never stored.
                 </p>
-              )}
-            </div>
-
-            {mode !== 'forgot' && (
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-medium text-content-secondary block">
-                    Password
-                  </label>
-                  {mode === 'signin' && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMode('forgot');
-                        setError(null);
-                        setSuccessNotice(null);
-                      }}
-                      className="text-[11px] text-brand-600 dark:text-brand-400 hover:underline transition-colors"
-                    >
-                      Forgot password?
-                    </button>
-                  )}
-                </div>
-                <div className="relative">
-                  <Lock className="w-4 h-4 text-content-tertiary absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder={mode === 'signup' ? 'Minimum 6 characters' : 'Enter your password'}
-                    className="w-full bg-surface-secondary border border-border rounded-md pl-9 pr-9 py-2 text-xs text-content-primary placeholder:text-content-tertiary focus:outline-none focus:border-brand-500 transition-colors"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-content-tertiary hover:text-content-primary p-0.5"
-                    title={showPassword ? 'Hide password' : 'Show password'}
-                  >
-                    {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                  </button>
-                </div>
               </div>
-            )}
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full mt-2 py-2.5 px-4 bg-brand-500 hover:bg-brand-600 disabled:opacity-60 text-white font-medium text-xs rounded-md shadow-sm transition-colors flex items-center justify-center gap-2"
-            >
-              <span>
-                {isLoading
-                  ? 'Processing...'
-                  : mode === 'forgot'
-                  ? 'Send Recovery Link'
-                  : mode === 'signin'
-                  ? 'Sign In to Workspace'
-                  : 'Create Learner Account'}
-              </span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-
-            {mode === 'forgot' && (
-              <div className="text-center pt-2">
+              <div className="pt-2">
                 <button
                   type="button"
                   onClick={() => {
                     setMode('signin');
-                    setError(null);
-                    setSuccessNotice(null);
+                    resetForgotFlow();
                   }}
-                  className="text-xs text-content-secondary hover:text-content-primary transition-colors"
+                  className="w-full py-2.5 px-4 bg-brand-500 hover:bg-brand-600 text-white font-medium text-xs rounded-md shadow-sm transition-colors flex items-center justify-center gap-2"
                 >
-                  Remember your password?{' '}
-                  <span className="text-brand-600 dark:text-brand-400 font-medium hover:underline">
-                    Sign In
-                  </span>
+                  <span>Return to Sign In</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
-            )}
-          </form>
+            </div>
+          ) : (
+            /* Forms (Signin / Signup / Forgot Step 1 & 2) */
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {mode === 'signup' && (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-content-secondary block">
+                    Full Name
+                  </label>
+                  <div className="relative">
+                    <User className="w-4 h-4 text-content-tertiary absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type="text"
+                      required
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Enter your full name"
+                      className="w-full bg-surface-secondary border border-border rounded-md pl-9 pr-3 py-2 text-xs text-content-primary placeholder:text-content-tertiary focus:outline-none focus:border-brand-500 transition-colors"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Email Input (Always shown for Signin, Signup, and Forgot Step 1) */}
+              {(mode !== 'forgot' || forgotStep === 'find') && (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-content-secondary block">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 text-content-tertiary absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="name@example.com"
+                      className="w-full bg-surface-secondary border border-border rounded-md pl-9 pr-3 py-2 text-xs text-content-primary placeholder:text-content-tertiary focus:outline-none focus:border-brand-500 transition-colors"
+                    />
+                  </div>
+                  {mode === 'forgot' && (
+                    <p className="text-[11px] text-content-tertiary">
+                      Enter the registered email of your local account to proceed with password reset.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Forgot Step 2: Show Verified Target Account */}
+              {mode === 'forgot' && forgotStep === 'reset' && (
+                <div className="p-2.5 rounded-md bg-surface-secondary border border-border flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2 overflow-hidden">
+                    <Mail className="w-3.5 h-3.5 text-brand-500 shrink-0" />
+                    <span className="font-mono text-content-primary truncate">{email}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setForgotStep('find')}
+                    className="text-[11px] text-brand-600 dark:text-brand-400 hover:underline shrink-0 font-medium"
+                  >
+                    Change
+                  </button>
+                </div>
+              )}
+
+              {/* Password Input for Sign In / Sign Up */}
+              {mode !== 'forgot' && (
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-medium text-content-secondary block">
+                      Password
+                    </label>
+                    {mode === 'signin' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMode('forgot');
+                          resetForgotFlow();
+                        }}
+                        className="text-[11px] text-brand-600 dark:text-brand-400 hover:underline transition-colors"
+                      >
+                        Forgot password?
+                      </button>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-content-tertiary absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder={mode === 'signup' ? 'Minimum 6 characters' : 'Enter your password'}
+                      className="w-full bg-surface-secondary border border-border rounded-md pl-9 pr-9 py-2 text-xs text-content-primary placeholder:text-content-tertiary focus:outline-none focus:border-brand-500 transition-colors"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-content-tertiary hover:text-content-primary p-0.5"
+                      title={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Forgot Step 2: New Password & Confirm New Password */}
+              {mode === 'forgot' && forgotStep === 'reset' && (
+                <>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-content-secondary block">
+                      New Password
+                    </label>
+                    <div className="relative">
+                      <Lock className="w-4 h-4 text-content-tertiary absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <input
+                        type={showNewPassword ? 'text' : 'password'}
+                        required
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Minimum 6 characters"
+                        className="w-full bg-surface-secondary border border-border rounded-md pl-9 pr-9 py-2 text-xs text-content-primary placeholder:text-content-tertiary focus:outline-none focus:border-brand-500 transition-colors"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-content-tertiary hover:text-content-primary p-0.5"
+                        title={showNewPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showNewPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-content-secondary block">
+                      Confirm New Password
+                    </label>
+                    <div className="relative">
+                      <Lock className="w-4 h-4 text-content-tertiary absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <input
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        required
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Re-enter new password"
+                        className="w-full bg-surface-secondary border border-border rounded-md pl-9 pr-9 py-2 text-xs text-content-primary placeholder:text-content-tertiary focus:outline-none focus:border-brand-500 transition-colors"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-content-tertiary hover:text-content-primary p-0.5"
+                        title={showConfirmPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showConfirmPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full mt-2 py-2.5 px-4 bg-brand-500 hover:bg-brand-600 disabled:opacity-60 text-white font-medium text-xs rounded-md shadow-sm transition-colors flex items-center justify-center gap-2"
+              >
+                <span>
+                  {isLoading
+                    ? 'Processing...'
+                    : mode === 'forgot'
+                    ? forgotStep === 'find'
+                      ? 'Find Account & Continue'
+                      : 'Save New Password'
+                    : mode === 'signin'
+                    ? 'Sign In to Workspace'
+                    : 'Create Learner Account'}
+                </span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+
+              {mode === 'forgot' && (
+                <div className="text-center pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode('signin');
+                      resetForgotFlow();
+                    }}
+                    className="text-xs text-content-secondary hover:text-content-primary transition-colors"
+                  >
+                    Remember your password?{' '}
+                    <span className="text-brand-600 dark:text-brand-400 font-medium hover:underline">
+                      Sign In
+                    </span>
+                  </button>
+                </div>
+              )}
+            </form>
+          )}
 
           <p className="text-[11px] text-content-tertiary text-center">
-            PRESTIGE uses Supabase for authentication and operational tracking. Cipher decodes and full reports remain strictly local in your browser.
+            PRESTIGE local development mode: passwords are cryptographically hashed (SHA-256). All ciphers and reports remain local on your device.
           </p>
         </div>
 

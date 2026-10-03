@@ -4,11 +4,18 @@ import { storageService, DEFAULT_USER_PROFILE } from '../services/storage';
 import { authService } from '../services/auth';
 import { supabaseAuthService } from '../services/supabaseAuth';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { USE_LOCAL_DEV_AUTH } from '../config/authMode';
 
 export function useUserStore() {
   const [user, setUser] = useState<UserProfile>(() => {
     const authUser = authService.getCurrentUser();
-    if (authUser) return authUser;
+    if (authUser) {
+      // Anti-tamper check on initial state derivation
+      if (authUser.role === 'ADMIN' && authUser.email?.toLowerCase() !== 'itzpardhiv@gmail.com') {
+        authUser.role = 'USER';
+      }
+      return authUser;
+    }
     return storageService.getUserProfile();
   });
 
@@ -29,13 +36,18 @@ export function useUserStore() {
     authService.saveCurrentUser(updated);
   }, []);
 
-  // Initialize and subscribe to Supabase Auth state changes
+  // Initialize and subscribe to Auth state changes
   useEffect(() => {
     isMountedRef.current = true;
 
-    if (!isSupabaseConfigured()) {
+    // TEMPORARY LOCAL DEVELOPMENT AUTHENTICATION MODE:
+    // Restore session purely from Chrome localStorage without requiring Supabase email recovery
+    if (USE_LOCAL_DEV_AUTH || !isSupabaseConfigured()) {
       const currentUser = authService.getCurrentUser();
       if (currentUser) {
+        if (currentUser.role === 'ADMIN' && currentUser.email?.toLowerCase() !== 'itzpardhiv@gmail.com') {
+          currentUser.role = 'USER';
+        }
         setUser(currentUser);
         setIsAuthenticated(true);
       } else {
@@ -45,7 +57,7 @@ export function useUserStore() {
       return;
     }
 
-    // 1. Initial check for existing Supabase session
+    // 1. Initial check for existing Supabase session (used when USE_LOCAL_DEV_AUTH is false)
     const checkSupabaseSession = async () => {
       try {
         const currentUser = await supabaseAuthService.getCurrentUser();
@@ -55,7 +67,6 @@ export function useUserStore() {
           syncUser(currentUser);
           setIsAuthenticated(true);
         } else {
-          // If no Supabase user, clear stale local session
           if (authService.getCurrentSession()) {
             authService.logout();
           }
@@ -100,47 +111,49 @@ export function useUserStore() {
   }, [syncUser]);
 
   const login = useCallback(async (email: string, pass: string): Promise<{ success: boolean; error?: string }> => {
-    if (isSupabaseConfigured()) {
-      const res = await supabaseAuthService.signIn(email, pass);
+    // When in local development mode, authenticate using Chrome localStorage & Web Crypto SHA-256
+    if (USE_LOCAL_DEV_AUTH || !isSupabaseConfigured()) {
+      const res = await authService.login(email, pass);
       if (res.success && res.user) {
         syncUser(res.user);
         setIsAuthenticated(true);
       }
-      return {
-        success: res.success,
-        error: res.error,
-      };
+      return res;
     }
 
-    // Local fallback when Supabase is not configured
-    const res = authService.login(email, pass);
+    // Production Supabase Auth path
+    const res = await supabaseAuthService.signIn(email, pass);
     if (res.success && res.user) {
       syncUser(res.user);
       setIsAuthenticated(true);
     }
-    return res;
+    return {
+      success: res.success,
+      error: res.error,
+    };
   }, [syncUser]);
 
   const signup = useCallback(async (name: string, email: string, pass: string): Promise<{ success: boolean; error?: string }> => {
-    if (isSupabaseConfigured()) {
-      const res = await supabaseAuthService.signUp(name, email, pass);
+    // When in local development mode, register using Chrome localStorage & Web Crypto SHA-256
+    if (USE_LOCAL_DEV_AUTH || !isSupabaseConfigured()) {
+      const res = await authService.signup(name, email, pass);
       if (res.success && res.user) {
         syncUser(res.user);
         setIsAuthenticated(true);
       }
-      return {
-        success: res.success,
-        error: res.error,
-      };
+      return res;
     }
 
-    // Local fallback when Supabase is not configured
-    const res = authService.signup(name, email, pass);
+    // Production Supabase Auth path
+    const res = await supabaseAuthService.signUp(name, email, pass);
     if (res.success && res.user) {
       syncUser(res.user);
       setIsAuthenticated(true);
     }
-    return res;
+    return {
+      success: res.success,
+      error: res.error,
+    };
   }, [syncUser]);
 
   const demoLogin = useCallback(() => {
@@ -153,7 +166,7 @@ export function useUserStore() {
   }, [syncUser]);
 
   const logout = useCallback(async () => {
-    if (isSupabaseConfigured()) {
+    if (!USE_LOCAL_DEV_AUTH && isSupabaseConfigured()) {
       await supabaseAuthService.signOut();
     }
     authService.logout();
@@ -174,8 +187,6 @@ export function useUserStore() {
 
       const updatedProfile: UserProfile = {
         ...prev,
-        level: undefined,
-        progress: undefined,
         completedChallengeIds: completedIds,
         stats: {
           ...prev.stats,
@@ -232,11 +243,35 @@ export function useUserStore() {
   }, []);
 
   const requestPasswordReset = useCallback(async (email: string): Promise<{ success: boolean; error?: string }> => {
+    if (email.trim().toLowerCase() === 'itzpardhiv@gmail.com') {
+      return { success: false, error: 'Password recovery is restricted for this administrative account.' };
+    }
+    if (USE_LOCAL_DEV_AUTH) {
+      const hasAcct = authService.hasAccount(email);
+      if (!hasAcct) {
+        return { success: false, error: 'No account found with this email address.' };
+      }
+      return { success: true };
+    }
     return supabaseAuthService.requestPasswordReset(email);
   }, []);
 
-  const updatePassword = useCallback(async (newPassword: string): Promise<{ success: boolean; error?: string }> => {
+  const updatePassword = useCallback(async (newPassword: string, email?: string): Promise<{ success: boolean; error?: string }> => {
+    const targetEmail = email?.trim().toLowerCase() || user?.email?.toLowerCase() || authService.getCurrentSession()?.email?.toLowerCase();
+    if (targetEmail === 'itzpardhiv@gmail.com') {
+      return { success: false, error: 'Password reset is restricted for this administrative account.' };
+    }
+    if (USE_LOCAL_DEV_AUTH) {
+      if (!targetEmail) {
+        return { success: false, error: 'Unable to identify account for password update. Please provide your email.' };
+      }
+      return authService.resetPasswordLocal(targetEmail, newPassword);
+    }
     return supabaseAuthService.updatePassword(newPassword);
+  }, [user]);
+
+  const resetPasswordLocal = useCallback(async (email: string, newPassword: string): Promise<{ success: boolean; error?: string }> => {
+    return authService.resetPasswordLocal(email, newPassword);
   }, []);
 
   return {
@@ -249,6 +284,7 @@ export function useUserStore() {
     logout,
     requestPasswordReset,
     updatePassword,
+    resetPasswordLocal,
     addXp,
     recordReportGenerated,
     updateUsername,

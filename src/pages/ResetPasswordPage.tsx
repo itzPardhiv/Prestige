@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, Eye, EyeOff, CheckCircle2, AlertCircle, ArrowRight, KeyRound, ShieldCheck } from 'lucide-react';
+import { Lock, Mail, Eye, EyeOff, CheckCircle2, AlertCircle, ArrowRight, KeyRound, ShieldCheck } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { USE_LOCAL_DEV_AUTH } from '../config/authMode';
 
 interface ResetPasswordPageProps {
-  onUpdatePassword: (newPassword: string) => Promise<{ success: boolean; error?: string }>;
+  onUpdatePassword: (newPassword: string, email?: string) => Promise<{ success: boolean; error?: string }>;
   onNavigateHome: () => void;
   onNavigateToForgot?: () => void;
+  defaultEmail?: string;
   darkMode?: boolean;
 }
 
@@ -13,7 +15,9 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
   onUpdatePassword,
   onNavigateHome,
   onNavigateToForgot,
+  defaultEmail = '',
 }) => {
+  const [accountEmail, setAccountEmail] = useState(defaultEmail);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -27,8 +31,9 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
   const [hasValidSession, setHasValidSession] = useState(false);
 
   useEffect(() => {
-    if (!isSupabaseConfigured()) {
-      // Local development or unconfigured mode: allow inspecting and testing reset UI
+    // TEMPORARY LOCAL DEVELOPMENT AUTHENTICATION MODE:
+    // Direct local reset flow without Supabase recovery email markers
+    if (USE_LOCAL_DEV_AUTH || !isSupabaseConfigured()) {
       setHasValidSession(true);
       setIsCheckingSession(false);
       return;
@@ -71,6 +76,16 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
     e.preventDefault();
     setError(null);
 
+    if (USE_LOCAL_DEV_AUTH && !accountEmail.trim()) {
+      setError('Please provide your account email address.');
+      return;
+    }
+
+    if (accountEmail.trim().toLowerCase() === 'itzpardhiv@gmail.com') {
+      setError('Password reset is restricted for this administrative account.');
+      return;
+    }
+
     if (!newPassword.trim()) {
       setError('Please provide a new password.');
       return;
@@ -89,7 +104,7 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
     setIsLoading(true);
 
     try {
-      const res = await onUpdatePassword(newPassword);
+      const res = await onUpdatePassword(newPassword, accountEmail.trim());
       // Immediately clear sensitive password strings from component memory
       setNewPassword('');
       setConfirmPassword('');
@@ -97,7 +112,7 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
       if (res.success) {
         setIsSuccess(true);
       } else {
-        setError(res.error || 'Failed to update password. Your recovery link may have expired.');
+        setError(res.error || 'Failed to update password. Your recovery link or session may have expired.');
       }
     } catch (err: unknown) {
       setNewPassword('');
@@ -110,7 +125,7 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
 
   const handleReturnToSignIn = async () => {
     try {
-      if (isSupabaseConfigured()) {
+      if (!USE_LOCAL_DEV_AUTH && isSupabaseConfigured()) {
         await supabase.auth.signOut();
       }
     } catch {
@@ -227,6 +242,25 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
               )}
 
               <form onSubmit={handleSubmit} className="space-y-4">
+                {USE_LOCAL_DEV_AUTH && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-content-secondary block">
+                      Account Email
+                    </label>
+                    <div className="relative">
+                      <Mail className="w-4 h-4 text-content-tertiary absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <input
+                        type="email"
+                        required
+                        value={accountEmail}
+                        onChange={(e) => setAccountEmail(e.target.value)}
+                        placeholder="name@example.com"
+                        className="w-full bg-surface-secondary border border-border rounded-md pl-9 pr-3 py-2 text-xs text-content-primary placeholder:text-content-tertiary focus:outline-none focus:border-brand-500 transition-colors"
+                      />
+                    </div>
+                  </div>
+                )}
+
                 {/* New Password */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-content-secondary block">
@@ -333,7 +367,7 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
 
           <div className="border-t border-border-subtle pt-3 flex items-center justify-center gap-1.5 text-[11px] text-content-tertiary">
             <ShieldCheck className="w-3.5 h-3.5 text-brand-500" />
-            <span>Encrypted transmission via Supabase Auth</span>
+            <span>{USE_LOCAL_DEV_AUTH ? 'Cryptographic credential verification (SHA-256)' : 'Encrypted transmission via Supabase Auth'}</span>
           </div>
         </div>
       </div>
