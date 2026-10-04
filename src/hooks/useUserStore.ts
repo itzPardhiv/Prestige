@@ -107,6 +107,11 @@ export function useUserStore() {
           if (profileUser && isMountedRef.current) {
             syncUser(profileUser);
             setIsAuthenticated(true);
+
+            // Clean auth fragments from URL after token ingestion
+            if (typeof window !== 'undefined' && window.location.hash.includes('access_token')) {
+              window.history.replaceState(null, '', window.location.pathname);
+            }
           }
         }
       } else if (event === 'SIGNED_OUT') {

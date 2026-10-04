@@ -140,6 +140,27 @@ assert(sqlContent.includes('CREATE TRIGGER tr_init_user_progress'), 'Automatic t
 console.log('\nTEST 7: Production Supabase Auth Mode Invariant');
 assert(USE_LOCAL_DEV_AUTH === false, 'USE_LOCAL_DEV_AUTH is false (Live Supabase Auth enabled for production)');
 
+// 8. Auth Confirmation & Reset Password Redirect Validation
+console.log('\nTEST 8: Email Confirmation & URL Configuration Verification');
+const authServicePath = path.resolve('src/services/supabaseAuth.ts');
+const authContent = fs.readFileSync(authServicePath, 'utf8');
+
+assert(authContent.includes('emailRedirectTo'), 'supabase.auth.signUp specifies emailRedirectTo in options');
+assert(authContent.includes("https://theprestige.vercel.app"), 'Default fallback domain is https://theprestige.vercel.app');
+assert(authContent.includes('window.location.origin'), 'Redirects dynamically adapt to current browser origin');
+assert(authContent.includes('/reset-password'), 'Password reset redirectTo route /reset-password preserved');
+
+const configTomlPath = path.resolve('supabase/config.toml');
+const tomlContent = fs.readFileSync(configTomlPath, 'utf8');
+
+assert(tomlContent.includes('site_url = "https://theprestige.vercel.app"'), 'Site URL in config.toml is set to production https://theprestige.vercel.app');
+assert(tomlContent.includes('https://theprestige.vercel.app'), 'Production origin allowed in redirect URLs');
+assert(tomlContent.includes('https://theprestige.vercel.app/'), 'Production root trailing slash allowed in redirect URLs');
+assert(tomlContent.includes('https://theprestige.vercel.app/reset-password'), 'Production password reset route allowed');
+assert(tomlContent.includes('http://localhost:3000'), 'Localhost origin allowed for local development');
+assert(tomlContent.includes('http://localhost:3000/'), 'Localhost root trailing slash allowed for local development');
+assert(tomlContent.includes('http://localhost:3000/reset-password'), 'Localhost password reset route allowed for local development');
+
 console.log('\n==================================================');
 console.log(`TEST SUMMARY: ${passed} PASSED, ${failed} FAILED`);
 console.log('==================================================\n');

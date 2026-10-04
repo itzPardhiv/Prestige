@@ -21,7 +21,11 @@ port = 54323
 enabled = true
 site_url = "https://theprestige.vercel.app"
 additional_redirect_urls = [
+  "https://theprestige.vercel.app",
+  "https://theprestige.vercel.app/",
   "https://theprestige.vercel.app/reset-password",
+  "http://localhost:3000",
+  "http://localhost:3000/",
   "http://localhost:3000/reset-password"
 ]
 jwt_expiry = 3600

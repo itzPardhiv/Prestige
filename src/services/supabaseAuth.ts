@@ -106,10 +106,20 @@ export const supabaseAuthService = {
 
     try {
       const cleanEmail = email.trim().toLowerCase();
+
+      // Environment-aware confirmation redirect:
+      // Production: https://theprestige.vercel.app/
+      // Local dev:   http://localhost:3000/
+      const redirectOrigin = typeof window !== 'undefined' && window.location?.origin
+        ? window.location.origin
+        : 'https://theprestige.vercel.app';
+      const emailRedirectTo = `${redirectOrigin}/`;
+
       const { data, error } = await supabase.auth.signUp({
         email: cleanEmail,
         password: pass,
         options: {
+          emailRedirectTo,
           data: {
             name: name.trim(),
             display_name: name.trim(),
@@ -254,9 +264,10 @@ export const supabaseAuthService = {
 
     const cleanEmail = email.trim().toLowerCase();
     try {
-      const redirectTo = typeof window !== 'undefined'
-        ? `${window.location.origin}/reset-password`
-        : undefined;
+      const redirectOrigin = typeof window !== 'undefined' && window.location?.origin
+        ? window.location.origin
+        : 'https://theprestige.vercel.app';
+      const redirectTo = `${redirectOrigin}/reset-password`;
 
       const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
         redirectTo,
