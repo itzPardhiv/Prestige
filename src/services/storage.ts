@@ -1,7 +1,8 @@
-import { UserProfile } from '../types/user';
+import { UserProfile, CurriculumMasteryItem } from '../types/user';
 import { SavedInvestigation } from '../types/investigation';
 import { InvestigationReport } from '../types/report';
 import { Folder } from '../types/archive';
+import { getDefaultCurriculumMastery } from '../utils/curriculum';
 
 const STORAGE_VERSION = 'v1.2';
 const KEY_PREFIX = `PRESTIGE_${STORAGE_VERSION}_`;
@@ -81,6 +82,48 @@ export const DEFAULT_USER_PROFILE: UserProfile = {
     },
   ],
   joinedDate: 'SEPTEMBER 2026',
+};
+
+/**
+ * Factory for creating a brand-new user profile with 0% progress across all curricula.
+ */
+export const createNewUserProfile = (id: string, email: string, name?: string): UserProfile => {
+  const cleanEmail = email.trim().toLowerCase();
+  const cleanName = name?.trim() || cleanEmail.split('@')[0] || 'User / Learner';
+  const initials = cleanName.slice(0, 2).toUpperCase() || 'LR';
+  const now = new Date().toISOString();
+
+  return {
+    id,
+    username: cleanName,
+    name: cleanName,
+    email: cleanEmail,
+    callsign: `${initials}-${Math.floor(10 + Math.random() * 90)}`,
+    avatarSeed: `avatar-${id}`,
+    role: cleanEmail === 'itzpardhiv@gmail.com' ? 'ADMIN' : 'USER',
+    isActive: true,
+    createdAt: now,
+    updatedAt: now,
+    firstLoginAt: now,
+    lastLoginAt: now,
+    loginCount: 1,
+    stats: {
+      codesDecoded: 0,
+      accuracy: 0,
+      currentStreak: 0,
+      bestStreak: 0,
+      xp: 0,
+      rank: 'INITIATE',
+      fastestSolveSeconds: 0,
+      highestDifficultySolved: 'None',
+      reportsGenerated: 0,
+      savedInvestigationsCount: 0,
+    },
+    completedChallengeIds: [],
+    achievements: [],
+    curriculumMastery: getDefaultCurriculumMastery(),
+    joinedDate: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase(),
+  };
 };
 
 // Default archive folders
@@ -173,6 +216,25 @@ class StorageService {
       localStorage.setItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(profile));
     } catch (e) {
       console.error('Error saving user profile:', e);
+    }
+  }
+
+  getUserProgress(userId: string): CurriculumMasteryItem[] | null {
+    if (!this.isAvailable() || !userId) return null;
+    try {
+      const data = localStorage.getItem(`${KEY_PREFIX}PROGRESS_${userId}`);
+      return data ? JSON.parse(data) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  saveUserProgress(userId: string, items: CurriculumMasteryItem[]): void {
+    if (!this.isAvailable() || !userId) return;
+    try {
+      localStorage.setItem(`${KEY_PREFIX}PROGRESS_${userId}`, JSON.stringify(items));
+    } catch (e) {
+      console.error('Error saving user progress:', e);
     }
   }
 

@@ -3,6 +3,7 @@ import { Edit2, Mail } from 'lucide-react';
 import { UserProfile } from '../types/user';
 import { INITIAL_CHALLENGES } from '../data/mockChallenges';
 import { soundService } from '../services/sound';
+import { computeCurriculumMastery } from '../utils/curriculum';
 
 interface ProfilePageProps {
   user: UserProfile;
@@ -16,6 +17,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(user.name || user.username);
   const [editCallsign, setEditCallsign] = useState(user.callsign);
+  const curriculumMastery = user.curriculumMastery || computeCurriculumMastery(user);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -161,14 +163,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
         </h3>
 
         <div className="surface-card p-5 space-y-3.5 text-xs rounded-xl border border-border">
-          {[
-            { name: 'Caesar & Rotational Ciphers', percent: 100 },
-            { name: 'Atbash Inverted Alphabet', percent: 85 },
-            { name: 'Vigenère Polyalphabetic Key Schedules', percent: 65 },
-            { name: 'International Morse Code Encoding', percent: 90 },
-            { name: 'Monoalphabetic Substitution & Letter Frequency', percent: 75 },
-            { name: 'Base64 & 8-Bit Binary Encodings', percent: 100 },
-          ].map((item) => (
+          {curriculumMastery.map((item) => (
             <div key={item.name} className="space-y-1.5">
               <div className="flex justify-between items-center text-xs">
                 <span className="font-medium text-content-primary">{item.name}</span>

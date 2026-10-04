@@ -23,6 +23,7 @@
 
 import { UserProfile, AuthSession, UserRole } from '../types/user';
 import { DEFAULT_USER_PROFILE } from './storage';
+import { getDefaultCurriculumMastery } from '../utils/curriculum';
 
 const SESSION_KEY = 'PRESTIGE_v1.2_AUTH_SESSION';
 const ACCOUNTS_KEY = 'PRESTIGE_v1.2_ACCOUNTS';
@@ -364,16 +365,18 @@ class AuthService {
       stats: {
         ...DEFAULT_USER_PROFILE.stats,
         codesDecoded: 0,
-        accuracy: 100,
-        currentStreak: 1,
-        bestStreak: 1,
-        xp: isAuthoritativeAdmin ? 1000 : 100,
+        accuracy: 0,
+        currentStreak: 0,
+        bestStreak: 0,
+        xp: isAuthoritativeAdmin ? 1000 : 0,
         rank: isAuthoritativeAdmin ? 'MASTER DECODER' : 'INITIATE',
         fastestSolveSeconds: 0,
         reportsGenerated: 0,
         savedInvestigationsCount: 0,
       },
       completedChallengeIds: [],
+      achievements: [],
+      curriculumMastery: getDefaultCurriculumMastery(),
       joinedDate: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase(),
     };
 

@@ -1,7 +1,9 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { UserProfile, UserRole } from '../types/user';
 import { ProfileRow } from '../types/supabase';
-import { DEFAULT_USER_PROFILE } from './storage';
+import { DEFAULT_USER_PROFILE, createNewUserProfile } from './storage';
+import { supabaseProgressService } from './supabaseProgress';
+import { getDefaultCurriculumMastery } from '../utils/curriculum';
 
 export interface SupabaseAuthResult {
   success: boolean;
@@ -20,23 +22,78 @@ export const supabaseAuthService = {
   },
 
   /**
-   * Convert a Supabase ProfileRow into the client UserProfile format
+   * Convert a Supabase ProfileRow into the client UserProfile format.
+   * New users start at 0% progress across all 6 curricula.
+   * Existing users preserve their stats and records.
    */
   mapProfileToUser(profile: ProfileRow): UserProfile {
+    // Preserve starter demo profile if it's the legacy demo account
+    if (profile.email?.toLowerCase() === 'learner@prestige.local') {
+      return {
+        ...DEFAULT_USER_PROFILE,
+        id: profile.id,
+        role: profile.role as UserRole,
+        joinedDate: profile.created_at,
+      };
+    }
+
+    const cleanEmail = profile.email;
+    const cleanName = profile.display_name || cleanEmail.split('@')[0] || 'User / Learner';
+    const isMasterAdmin = cleanEmail.toLowerCase() === 'itzpardhiv@gmail.com';
+    const initials = cleanName.slice(0, 2).toUpperCase() || 'LR';
+
     return {
-      ...DEFAULT_USER_PROFILE,
       id: profile.id,
-      username: profile.display_name || profile.email.split('@')[0],
-      name: profile.display_name || profile.email.split('@')[0],
-      email: profile.email,
-      callsign: (profile.display_name || 'ANALYST').toUpperCase().slice(0, 8),
-      role: profile.role as UserRole,
+      username: cleanName,
+      name: cleanName,
+      email: cleanEmail,
+      callsign: isMasterAdmin ? 'PARDHIV-01' : (cleanName.slice(0, 8).toUpperCase() || `${initials}-01`),
+      avatarSeed: `avatar-${profile.id}`,
+      role: isMasterAdmin ? 'ADMIN' : (profile.role as UserRole || 'USER'),
+      isActive: profile.is_active,
+      createdAt: profile.created_at,
+      updatedAt: profile.updated_at,
+      firstLoginAt: profile.first_login_at || undefined,
+      lastLoginAt: profile.last_login_at || undefined,
+      loginCount: profile.login_count || 1,
       stats: {
-        ...DEFAULT_USER_PROFILE.stats,
+        codesDecoded: 0,
+        accuracy: 0,
+        currentStreak: 0,
+        bestStreak: 0,
+        xp: isMasterAdmin ? 1000 : 0,
+        rank: isMasterAdmin ? 'MASTER DECODER' : 'INITIATE',
+        fastestSolveSeconds: 0,
+        highestDifficultySolved: 'None',
         reportsGenerated: profile.report_count || 0,
+        savedInvestigationsCount: 0,
       },
+      completedChallengeIds: [],
+      achievements: [],
+      curriculumMastery: getDefaultCurriculumMastery(),
       joinedDate: profile.created_at,
     };
+  },
+
+  /**
+   * Enrich client UserProfile with persisted user_progress and completed challenges
+   */
+  async enrichUserProfile(user: UserProfile): Promise<UserProfile> {
+    try {
+      const progress = await supabaseProgressService.getUserProgress(user.id);
+      const completed = await supabaseProgressService.getCompletedChallenges(user.id);
+      return {
+        ...user,
+        curriculumMastery: progress,
+        completedChallengeIds: completed.length > 0 ? completed : user.completedChallengeIds,
+        stats: {
+          ...user.stats,
+          codesDecoded: completed.length > 0 ? completed.length : user.stats.codesDecoded,
+        },
+      };
+    } catch {
+      return user;
+    }
   },
 
   /**
@@ -86,18 +143,15 @@ export const supabaseAuthService = {
         profile = inserted as ProfileRow;
       }
 
+      // Initialize 0% progress in public.user_progress for new user
+      await supabaseProgressService.initializeUserProgress(data.user.id);
+
       const clientUser: UserProfile = profile
         ? this.mapProfileToUser(profile)
-        : {
-            ...DEFAULT_USER_PROFILE,
-            id: data.user.id,
-            email: cleanEmail,
-            username: name.trim(),
-            name: name.trim(),
-            role: 'USER' as UserRole,
-          };
+        : createNewUserProfile(data.user.id, cleanEmail, name.trim());
 
-      return { success: true, user: clientUser, profile: profile || undefined };
+      const enrichedUser = await this.enrichUserProfile(clientUser);
+      return { success: true, user: enrichedUser, profile: profile || undefined };
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Registration error occurred';
       return { success: false, error: message };
@@ -154,14 +208,10 @@ export const supabaseAuthService = {
       profile = await this.getProfile(data.user.id);
       const clientUser: UserProfile = profile
         ? this.mapProfileToUser(profile)
-        : {
-            ...DEFAULT_USER_PROFILE,
-            id: data.user.id,
-            email: cleanEmail,
-            role: 'USER' as UserRole,
-          };
+        : createNewUserProfile(data.user.id, cleanEmail);
 
-      return { success: true, user: clientUser, profile: profile || undefined };
+      const enrichedUser = await this.enrichUserProfile(clientUser);
+      return { success: true, user: enrichedUser, profile: profile || undefined };
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'An error occurred during authentication';
       await this.recordFailedLogin(cleanEmail, message, userAgent);
@@ -268,21 +318,15 @@ export const supabaseAuthService = {
           await this.signOut();
           return null;
         }
-        return this.mapProfileToUser(profile);
+        const user = this.mapProfileToUser(profile);
+        return await this.enrichUserProfile(user);
       }
 
       // Safe fallback when profile trigger is delayed or table is being created
       const userMeta = session.user.user_metadata || {};
       const fallbackName = userMeta.name || userMeta.display_name || session.user.email?.split('@')[0] || 'Analyst';
-      return {
-        ...DEFAULT_USER_PROFILE,
-        id: session.user.id,
-        email: session.user.email || '',
-        username: fallbackName,
-        name: fallbackName,
-        role: session.user.email?.toLowerCase() === 'itzpardhiv@gmail.com' ? 'ADMIN' : 'USER',
-        joinedDate: session.user.created_at || new Date().toISOString(),
-      };
+      const fallbackUser = createNewUserProfile(session.user.id, session.user.email || '', fallbackName);
+      return await this.enrichUserProfile(fallbackUser);
     } catch {
       return null;
     }

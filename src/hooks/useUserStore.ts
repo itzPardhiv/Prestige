@@ -3,8 +3,10 @@ import { UserProfile } from '../types/user';
 import { storageService, DEFAULT_USER_PROFILE } from '../services/storage';
 import { authService } from '../services/auth';
 import { supabaseAuthService } from '../services/supabaseAuth';
+import { supabaseProgressService } from '../services/supabaseProgress';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { USE_LOCAL_DEV_AUTH } from '../config/authMode';
+import { computeCurriculumMastery } from '../utils/curriculum';
 
 export function useUserStore() {
   const [user, setUser] = useState<UserProfile>(() => {
@@ -37,8 +39,14 @@ export function useUserStore() {
     if (updated.role === 'ADMIN' && updated.email?.toLowerCase() !== 'itzpardhiv@gmail.com') {
       updated = { ...updated, role: 'USER' };
     }
+    if (!updated.curriculumMastery) {
+      updated.curriculumMastery = computeCurriculumMastery(updated);
+    }
     setUser(updated);
     storageService.saveUserProfile(updated);
+    if (updated.id) {
+      storageService.saveUserProgress(updated.id, updated.curriculumMastery);
+    }
     authService.saveCurrentUser(updated);
   }, []);
 
@@ -201,8 +209,23 @@ export function useUserStore() {
         },
       };
 
+      // Compute dynamic curriculum mastery
+      const newMastery = computeCurriculumMastery(updatedProfile);
+      updatedProfile.curriculumMastery = newMastery;
+
       storageService.saveUserProfile(updatedProfile);
+      if (prev.id) {
+        storageService.saveUserProgress(prev.id, newMastery);
+      }
       authService.saveCurrentUser(updatedProfile);
+
+      // Asynchronously sync with Supabase backend if configured & live
+      if (!USE_LOCAL_DEV_AUTH && isSupabaseConfigured() && solvedChallengeId && prev.id) {
+        supabaseProgressService.recordChallengeCompletion(prev.id, solvedChallengeId).catch((err) => {
+          console.warn('Backend progress recording notice:', err);
+        });
+      }
+
       return updatedProfile;
     });
   }, []);

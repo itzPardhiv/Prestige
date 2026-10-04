@@ -77,3 +77,25 @@ export interface UserDetailData {
   recentReports: ReportEventRow[];
   recentAuditLogs: AuditLogRow[];
 }
+
+export interface UserProgressRow {
+  id: string;
+  user_id: string;
+  curriculum_id: string;
+  curriculum_name: string;
+  mastery_percent: number;
+  challenges_completed: number;
+  challenges_total: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserChallengeCompletionRow {
+  id: string;
+  user_id: string;
+  challenge_id: string;
+  attempts: number;
+  score: number;
+  completed_at: string;
+}
+

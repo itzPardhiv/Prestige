@@ -30,6 +30,12 @@ export interface UserStats {
   savedInvestigationsCount: number;
 }
 
+export interface CurriculumMasteryItem {
+  id: string;
+  name: string;
+  percent: number;
+}
+
 export interface UserProfile {
   id: string;
   username: string;
@@ -48,6 +54,7 @@ export interface UserProfile {
   stats: UserStats;
   completedChallengeIds: string[];
   achievements: Achievement[];
+  curriculumMastery?: CurriculumMasteryItem[];
   joinedDate: string;
 }
 

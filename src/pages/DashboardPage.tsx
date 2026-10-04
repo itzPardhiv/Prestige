@@ -10,6 +10,7 @@ import { LearningPillars } from '../components/features/about/LearningPillars';
 import { CreatorSection } from '../components/features/about/CreatorSection';
 import { AnimatedCounter, staggerContainerVariants, staggerItemVariants } from '../lib/motion';
 import FaultyTerminal from '../components/ui/FaultyTerminal';
+import { computeCurriculumMastery } from '../utils/curriculum';
 
 interface DashboardPageProps {
   user: UserProfile;
@@ -27,6 +28,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   darkMode,
 }) => {
   const stats = user.stats;
+  const curriculumMastery = user.curriculumMastery || computeCurriculumMastery(user);
   const displayName = (!user.name || user.name === 'Alex Morgan' || user.username === 'Alex Morgan')
     ? (user.role === 'ADMIN' ? (user.name || 'Pardhiv') : 'User / Learner')
     : user.name || user.username || 'User / Learner';
@@ -186,17 +188,46 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
           <div className="p-5 space-y-1">
             <div className="text-2xl sm:text-3xl font-semibold font-mono text-content-primary tracking-tight">
-              <AnimatedCounter value={stats.reportsGenerated || 3} />
+              <AnimatedCounter value={stats.reportsGenerated ?? 0} />
             </div>
             <div className="text-xs text-content-secondary">Reports generated</div>
           </div>
 
           <div className="p-5 space-y-1">
             <div className="text-2xl sm:text-3xl font-semibold font-mono text-content-primary tracking-tight">
-              <AnimatedCounter value={stats.savedInvestigationsCount || 2} />
+              <AnimatedCounter value={stats.savedInvestigationsCount ?? 0} />
             </div>
             <div className="text-xs text-content-secondary">Saved investigations</div>
           </div>
+        </div>
+      </motion.div>
+
+      {/* Cipher Curriculum Mastery */}
+      <motion.div variants={staggerItemVariants} className="space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="label-eyebrow">
+            Cipher Curriculum Mastery
+          </span>
+          <span className="text-[11px] font-mono text-content-tertiary">
+            Personal Progress
+          </span>
+        </div>
+
+        <div className="surface-card p-5 rounded-lg border border-border grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3.5 text-xs">
+          {curriculumMastery.map((item) => (
+            <div key={item.id || item.name} className="space-y-1.5">
+              <div className="flex justify-between items-center text-xs">
+                <span className="font-medium text-content-primary truncate mr-2">{item.name}</span>
+                <span className="font-technical text-content-secondary font-medium">{item.percent}%</span>
+              </div>
+              <div className="w-full bg-surface-secondary h-1.5 rounded-full overflow-hidden">
+                <div
+                  className="bg-brand-500 h-full rounded-full transition-all duration-500"
+                  style={{ width: `${item.percent}%` }}
+                />
+              </div>
+            </div>
+          ))}
         </div>
       </motion.div>
 
