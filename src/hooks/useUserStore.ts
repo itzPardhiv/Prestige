@@ -116,9 +116,10 @@ export function useUserStore() {
         }
       } else if (event === 'SIGNED_OUT') {
         authService.logout();
+        storageService.clearUserProfile();
         if (isMountedRef.current) {
           setIsAuthenticated(false);
-          setUser(storageService.getUserProfile() || DEFAULT_USER_PROFILE);
+          setUser(DEFAULT_USER_PROFILE);
         }
       }
     });
@@ -189,6 +190,7 @@ export function useUserStore() {
       await supabaseAuthService.signOut();
     }
     authService.logout();
+    storageService.clearUserProfile();
     setIsAuthenticated(false);
     setUser(DEFAULT_USER_PROFILE);
   }, []);

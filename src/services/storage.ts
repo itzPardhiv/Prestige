@@ -15,7 +15,7 @@ export const STORAGE_KEYS = {
   CURRENT_MISSION: `${KEY_PREFIX}CURRENT_MISSION`,
 };
 
-// Default starter profile
+// Default starter profile for new/guest visitors (0% across all metrics)
 export const DEFAULT_USER_PROFILE: UserProfile = {
   id: 'learner-alpha-01',
   username: 'User / Learner',
@@ -24,64 +24,21 @@ export const DEFAULT_USER_PROFILE: UserProfile = {
   callsign: 'LEARNER-01',
   avatarSeed: 'learner-default',
   stats: {
-    codesDecoded: 4,
-    accuracy: 94,
-    currentStreak: 3,
-    bestStreak: 7,
-    xp: 650,
-    rank: 'ANALYST',
-    fastestSolveSeconds: 38,
-    highestDifficultySolved: 'Advanced',
-    reportsGenerated: 3,
-    savedInvestigationsCount: 2,
+    codesDecoded: 0,
+    accuracy: 0,
+    currentStreak: 0,
+    bestStreak: 0,
+    xp: 0,
+    rank: 'INITIATE',
+    fastestSolveSeconds: 0,
+    highestDifficultySolved: 'None',
+    reportsGenerated: 0,
+    savedInvestigationsCount: 0,
   },
-  completedChallengeIds: ['mission-01'],
-  achievements: [
-    {
-      id: 'first-decode',
-      title: 'FIRST DECODE',
-      description: 'Successfully decode your inaugural ciphertext challenge.',
-      icon: 'Key',
-      isUnlocked: true,
-      unlockedAt: '2026-09-20',
-      category: 'ciphers',
-    },
-    {
-      id: '10-ciphers',
-      title: '10 CIPHERS',
-      description: 'Decode 10 distinct ciphers across all categories.',
-      icon: 'Shield',
-      isUnlocked: false,
-      category: 'ciphers',
-    },
-    {
-      id: 'perfect-run',
-      title: 'PERFECT RUN',
-      description: 'Decode an Advanced or Expert cipher with 0 hints and 100% accuracy.',
-      icon: 'Award',
-      isUnlocked: true,
-      unlockedAt: '2026-09-22',
-      category: 'accuracy',
-    },
-    {
-      id: 'master-decoder',
-      title: 'MASTER DECODER',
-      description: 'Attain the prestigious level of Master Decoder with 2,500+ XP.',
-      icon: 'Crown',
-      isUnlocked: false,
-      category: 'mastery',
-    },
-    {
-      id: 'speed-analyst',
-      title: 'SPEED ANALYST',
-      description: 'Solve any cipher challenge in under 45 seconds.',
-      icon: 'Zap',
-      isUnlocked: true,
-      unlockedAt: '2026-09-21',
-      category: 'speed',
-    },
-  ],
-  joinedDate: 'SEPTEMBER 2026',
+  completedChallengeIds: [],
+  achievements: [],
+  curriculumMastery: getDefaultCurriculumMastery(),
+  joinedDate: 'OCTOBER 2026',
 };
 
 /**
@@ -182,12 +139,21 @@ class StorageService {
     }
   }
 
-  getUserProfile(): UserProfile {
+  getUserProfile(userId?: string): UserProfile {
     if (!this.isAvailable()) return DEFAULT_USER_PROFILE;
     try {
-      const data = localStorage.getItem(STORAGE_KEYS.USER_PROFILE);
-      if (!data) return DEFAULT_USER_PROFILE;
+      const storageKey = userId ? `${STORAGE_KEYS.USER_PROFILE}_${userId}` : STORAGE_KEYS.USER_PROFILE;
+      const data = localStorage.getItem(storageKey);
+      if (!data) {
+        if (userId) {
+          return createNewUserProfile(userId, 'user@prestige.local');
+        }
+        return DEFAULT_USER_PROFILE;
+      }
       const profile: UserProfile = JSON.parse(data);
+      if (userId && profile.id !== userId) {
+        return createNewUserProfile(userId, 'user@prestige.local');
+      }
       if (profile.username === 'Agent Cipher' || profile.username === 'Agent' || profile.username === 'Alex Morgan' || profile.name === 'Alex Morgan') {
         profile.username = DEFAULT_USER_PROFILE.username;
         profile.name = DEFAULT_USER_PROFILE.name;
@@ -211,11 +177,26 @@ class StorageService {
   }
 
   saveUserProfile(profile: UserProfile): void {
-    if (!this.isAvailable()) return;
+    if (!this.isAvailable() || !profile) return;
     try {
+      if (profile.id) {
+        localStorage.setItem(`${STORAGE_KEYS.USER_PROFILE}_${profile.id}`, JSON.stringify(profile));
+      }
       localStorage.setItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(profile));
     } catch (e) {
       console.error('Error saving user profile:', e);
+    }
+  }
+
+  clearUserProfile(userId?: string): void {
+    if (!this.isAvailable()) return;
+    try {
+      localStorage.removeItem(STORAGE_KEYS.USER_PROFILE);
+      if (userId) {
+        localStorage.removeItem(`${STORAGE_KEYS.USER_PROFILE}_${userId}`);
+      }
+    } catch (e) {
+      console.error('Error clearing active user profile:', e);
     }
   }
 

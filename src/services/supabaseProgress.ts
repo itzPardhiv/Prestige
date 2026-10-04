@@ -37,6 +37,11 @@ export const supabaseProgressService = {
       const progressMap = new Map<string, number>();
       rows.forEach((r) => progressMap.set(r.curriculum_id, r.mastery_percent));
 
+      // If fewer than 6 canonical records exist, asynchronously seed missing records
+      if (rows.length < CANONICAL_CURRICULUM.length) {
+        this.initializeUserProgress(userId).catch(() => {});
+      }
+
       return CANONICAL_CURRICULUM.map((item) => ({
         id: item.id,
         name: item.name,
@@ -50,7 +55,8 @@ export const supabaseProgressService = {
 
   /**
    * Idempotently initialize the 6 canonical curriculum records at 0% mastery.
-   * Uses ON CONFLICT (user_id, curriculum_id) DO NOTHING so existing records are NEVER overwritten.
+   * Invokes SECURITY DEFINER function public.initialize_user_progress(p_user_id)
+   * with fallback to direct upsert. Existing records are NEVER overwritten.
    */
   async initializeUserProgress(userId: string): Promise<CurriculumMasteryItem[]> {
     const defaultItems = getDefaultCurriculumMastery();
@@ -59,25 +65,32 @@ export const supabaseProgressService = {
     }
 
     try {
-      const rowsToInsert = CANONICAL_CURRICULUM.map((item) => ({
-        user_id: userId,
-        curriculum_id: item.id,
-        curriculum_name: item.name,
-        mastery_percent: 0,
-        challenges_completed: 0,
-        challenges_total: item.totalChallenges,
-      }));
+      // 1. Invoke SECURITY DEFINER RPC to initialize all 6 items at 0% idempotently
+      const { error: rpcError } = await supabase.rpc('initialize_user_progress', {
+        p_user_id: userId,
+      });
 
-      // Idempotent upsert with ignoreDuplicates: true (ON CONFLICT DO NOTHING)
-      const { error } = await supabase
-        .from('user_progress')
-        .upsert(rowsToInsert, {
-          onConflict: 'user_id,curriculum_id',
-          ignoreDuplicates: true,
-        });
+      if (rpcError) {
+        // Fallback: direct table upsert with ignoreDuplicates (ON CONFLICT DO NOTHING)
+        const rowsToInsert = CANONICAL_CURRICULUM.map((item) => ({
+          user_id: userId,
+          curriculum_id: item.id,
+          curriculum_name: item.name,
+          mastery_percent: 0,
+          challenges_completed: 0,
+          challenges_total: item.totalChallenges,
+        }));
 
-      if (error) {
-        console.warn('user_progress initialization warning:', error.message);
+        const { error } = await supabase
+          .from('user_progress')
+          .upsert(rowsToInsert, {
+            onConflict: 'user_id,curriculum_id',
+            ignoreDuplicates: true,
+          });
+
+        if (error) {
+          console.warn('user_progress initialization warning:', error.message);
+        }
       }
 
       return defaultItems;

@@ -82,13 +82,15 @@ export const supabaseAuthService = {
     try {
       const progress = await supabaseProgressService.getUserProgress(user.id);
       const completed = await supabaseProgressService.getCompletedChallenges(user.id);
+      const isDemoAccount = user.email?.toLowerCase() === 'learner@prestige.local';
+
       return {
         ...user,
         curriculumMastery: progress,
-        completedChallengeIds: completed.length > 0 ? completed : user.completedChallengeIds,
+        completedChallengeIds: isDemoAccount && completed.length === 0 ? user.completedChallengeIds : completed,
         stats: {
           ...user.stats,
-          codesDecoded: completed.length > 0 ? completed.length : user.stats.codesDecoded,
+          codesDecoded: isDemoAccount && completed.length === 0 ? user.stats.codesDecoded : completed.length,
         },
       };
     } catch {
