@@ -80,6 +80,9 @@ export function useUserStore() {
         if (currentUser) {
           syncUser(currentUser);
           setIsAuthenticated(true);
+          if (currentUser.role === 'ADMIN' && typeof window !== 'undefined') {
+            sessionStorage.setItem('prestige_admin_session_active', 'true');
+          }
         } else {
           if (authService.getCurrentSession()) {
             authService.logout();
@@ -107,6 +110,9 @@ export function useUserStore() {
           if (profileUser && isMountedRef.current) {
             syncUser(profileUser);
             setIsAuthenticated(true);
+            if (profileUser.role === 'ADMIN' && typeof window !== 'undefined') {
+              sessionStorage.setItem('prestige_admin_session_active', 'true');
+            }
 
             // Clean auth fragments from URL after token ingestion
             if (typeof window !== 'undefined' && window.location.hash.includes('access_token')) {
@@ -117,6 +123,9 @@ export function useUserStore() {
       } else if (event === 'SIGNED_OUT') {
         authService.logout();
         storageService.clearUserProfile();
+        if (typeof window !== 'undefined') {
+          sessionStorage.removeItem('prestige_admin_session_active');
+        }
         if (isMountedRef.current) {
           setIsAuthenticated(false);
           setUser(DEFAULT_USER_PROFILE);
@@ -130,13 +139,16 @@ export function useUserStore() {
     };
   }, [syncUser]);
 
-  const login = useCallback(async (email: string, pass: string): Promise<{ success: boolean; error?: string }> => {
+  const login = useCallback(async (email: string, pass: string): Promise<{ success: boolean; user?: UserProfile; error?: string }> => {
     // When in local development mode, authenticate using Chrome localStorage & Web Crypto SHA-256
     if (USE_LOCAL_DEV_AUTH || !isSupabaseConfigured()) {
       const res = await authService.login(email, pass);
       if (res.success && res.user) {
         syncUser(res.user);
         setIsAuthenticated(true);
+        if (res.user.role === 'ADMIN' && typeof window !== 'undefined') {
+          sessionStorage.setItem('prestige_admin_session_active', 'true');
+        }
       }
       return res;
     }
@@ -146,9 +158,13 @@ export function useUserStore() {
     if (res.success && res.user) {
       syncUser(res.user);
       setIsAuthenticated(true);
+      if (res.user.role === 'ADMIN' && typeof window !== 'undefined') {
+        sessionStorage.setItem('prestige_admin_session_active', 'true');
+      }
     }
     return {
       success: res.success,
+      user: res.user,
       error: res.error,
     };
   }, [syncUser]);

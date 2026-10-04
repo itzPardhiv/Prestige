@@ -39,7 +39,8 @@ export const supabaseAuthService = {
 
     const cleanEmail = profile.email;
     const cleanName = profile.display_name || cleanEmail.split('@')[0] || 'User / Learner';
-    const isMasterAdmin = cleanEmail.toLowerCase() === 'itzpardhiv@gmail.com';
+    const profileRole = (profile.role as UserRole) || 'USER';
+    const isAdminRole = profileRole === 'ADMIN';
     const initials = cleanName.slice(0, 2).toUpperCase() || 'LR';
 
     return {
@@ -47,9 +48,9 @@ export const supabaseAuthService = {
       username: cleanName,
       name: cleanName,
       email: cleanEmail,
-      callsign: isMasterAdmin ? 'PARDHIV-01' : (cleanName.slice(0, 8).toUpperCase() || `${initials}-01`),
+      callsign: isAdminRole ? 'PARDHIV-01' : (cleanName.slice(0, 8).toUpperCase() || `${initials}-01`),
       avatarSeed: `avatar-${profile.id}`,
-      role: isMasterAdmin ? 'ADMIN' : (profile.role as UserRole || 'USER'),
+      role: profileRole,
       isActive: profile.is_active,
       createdAt: profile.created_at,
       updatedAt: profile.updated_at,
@@ -57,14 +58,14 @@ export const supabaseAuthService = {
       lastLoginAt: profile.last_login_at || undefined,
       loginCount: profile.login_count || 1,
       stats: {
-        codesDecoded: 0,
-        accuracy: 0,
-        currentStreak: 0,
-        bestStreak: 0,
-        xp: isMasterAdmin ? 1000 : 0,
-        rank: isMasterAdmin ? 'MASTER DECODER' : 'INITIATE',
-        fastestSolveSeconds: 0,
-        highestDifficultySolved: 'None',
+        codesDecoded: isAdminRole ? 12 : 0,
+        accuracy: isAdminRole ? 98 : 0,
+        currentStreak: isAdminRole ? 5 : 0,
+        bestStreak: isAdminRole ? 15 : 0,
+        xp: isAdminRole ? 1000 : 0,
+        rank: isAdminRole ? 'MASTER DECODER' : 'INITIATE',
+        fastestSolveSeconds: isAdminRole ? 24 : 0,
+        highestDifficultySolved: isAdminRole ? 'Expert' : 'None',
         reportsGenerated: profile.report_count || 0,
         savedInvestigationsCount: 0,
       },
@@ -80,6 +81,10 @@ export const supabaseAuthService = {
    */
   async enrichUserProfile(user: UserProfile): Promise<UserProfile> {
     try {
+      // Preserve admin profile and do not overwrite with 0% initiate progress
+      if (user.role === 'ADMIN') {
+        return user;
+      }
       const progress = await supabaseProgressService.getUserProgress(user.id);
       const completed = await supabaseProgressService.getCompletedChallenges(user.id);
       const isDemoAccount = user.email?.toLowerCase() === 'learner@prestige.local';
@@ -218,6 +223,17 @@ export const supabaseAuthService = {
 
       // Refresh profile to get updated login count
       profile = await this.getProfile(data.user.id);
+
+      // Self-heal: ensure itzpardhiv@gmail.com profile exists with role = 'ADMIN'
+      if (cleanEmail === 'itzpardhiv@gmail.com' && (!profile || profile.role !== 'ADMIN')) {
+        try {
+          await supabase.rpc('restore_admin_profile', { p_user_id: data.user.id });
+          profile = await this.getProfile(data.user.id);
+        } catch (e) {
+          console.warn('Admin profile restoration error:', e);
+        }
+      }
+
       const clientUser: UserProfile = profile
         ? this.mapProfileToUser(profile)
         : createNewUserProfile(data.user.id, cleanEmail);
@@ -325,7 +341,18 @@ export const supabaseAuthService = {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session || !session.user) return null;
 
-      const profile = await this.getProfile(session.user.id);
+      let profile = await this.getProfile(session.user.id);
+
+      // Self-heal: ensure itzpardhiv@gmail.com profile exists with role = 'ADMIN'
+      if (session.user.email?.toLowerCase() === 'itzpardhiv@gmail.com' && (!profile || profile.role !== 'ADMIN')) {
+        try {
+          await supabase.rpc('restore_admin_profile', { p_user_id: session.user.id });
+          profile = await this.getProfile(session.user.id);
+        } catch (e) {
+          console.warn('Admin self-healing restoration notice:', e);
+        }
+      }
+
       if (profile) {
         if (!profile.is_active) {
           await this.signOut();

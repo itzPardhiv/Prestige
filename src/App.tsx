@@ -397,6 +397,43 @@ export function App() {
       );
     }
 
+    if (activeTab === 'admin' || (typeof window !== 'undefined' && window.location.pathname === '/admin')) {
+      return (
+        <div className="min-h-screen flex flex-col bg-surface-canvas text-content-primary antialiased transition-colors">
+          {!bootCompleted && <TerminalDemo onComplete={handleBootComplete} />}
+          <main className="flex-1 px-4 sm:px-6 lg:px-8 py-8">
+            <AdminLoginPage
+              onAdminLogin={async (email, pass) => {
+                const res = await login(email, pass);
+                return res;
+              }}
+              onNavigateHome={() => {
+                setActiveTab('dashboard');
+                window.history.pushState({}, '', '/');
+              }}
+              darkMode={darkMode}
+            />
+          </main>
+          <AnimatedFooter
+            onSelectTab={(tab) => {
+              setActiveTab(tab);
+              window.history.pushState({}, '', `/${tab === 'dashboard' ? '' : tab}`);
+            }}
+            onOpenTerms={() => setIsTermsOpen(true)}
+            onScrollToFaq={() => {
+              setPublicFaqView(true);
+              window.history.pushState({}, '', '/faq');
+            }}
+            onScrollToCreator={() => {}}
+          />
+          <TermsPoliciesModal
+            isOpen={isTermsOpen}
+            onClose={() => setIsTermsOpen(false)}
+          />
+        </div>
+      );
+    }
+
     return (
       <>
         {!bootCompleted && <TerminalDemo onComplete={handleBootComplete} />}
@@ -550,7 +587,7 @@ export function App() {
 
             {activeTab === 'admin' && (
               <AnimatedPage key="admin">
-                {user?.role === 'ADMIN' && (typeof window !== 'undefined' && sessionStorage.getItem('prestige_admin_session_active') === 'true') ? (
+                {user?.role === 'ADMIN' ? (
                   <AdminDashboardPage
                     user={user}
                     darkMode={darkMode}

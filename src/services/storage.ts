@@ -47,6 +47,7 @@ export const DEFAULT_USER_PROFILE: UserProfile = {
 export const createNewUserProfile = (id: string, email: string, name?: string): UserProfile => {
   const cleanEmail = email.trim().toLowerCase();
   const cleanName = name?.trim() || cleanEmail.split('@')[0] || 'User / Learner';
+  const isAdmin = cleanEmail === 'itzpardhiv@gmail.com';
   const initials = cleanName.slice(0, 2).toUpperCase() || 'LR';
   const now = new Date().toISOString();
 
@@ -55,9 +56,9 @@ export const createNewUserProfile = (id: string, email: string, name?: string): 
     username: cleanName,
     name: cleanName,
     email: cleanEmail,
-    callsign: `${initials}-${Math.floor(10 + Math.random() * 90)}`,
+    callsign: isAdmin ? 'PARDHIV-01' : `${initials}-${Math.floor(10 + Math.random() * 90)}`,
     avatarSeed: `avatar-${id}`,
-    role: cleanEmail === 'itzpardhiv@gmail.com' ? 'ADMIN' : 'USER',
+    role: isAdmin ? 'ADMIN' : 'USER',
     isActive: true,
     createdAt: now,
     updatedAt: now,
@@ -65,14 +66,14 @@ export const createNewUserProfile = (id: string, email: string, name?: string): 
     lastLoginAt: now,
     loginCount: 1,
     stats: {
-      codesDecoded: 0,
-      accuracy: 0,
-      currentStreak: 0,
-      bestStreak: 0,
-      xp: 0,
-      rank: 'INITIATE',
-      fastestSolveSeconds: 0,
-      highestDifficultySolved: 'None',
+      codesDecoded: isAdmin ? 12 : 0,
+      accuracy: isAdmin ? 98 : 0,
+      currentStreak: isAdmin ? 5 : 0,
+      bestStreak: isAdmin ? 15 : 0,
+      xp: isAdmin ? 1000 : 0,
+      rank: isAdmin ? 'MASTER DECODER' : 'INITIATE',
+      fastestSolveSeconds: isAdmin ? 24 : 0,
+      highestDifficultySolved: isAdmin ? 'Expert' : 'None',
       reportsGenerated: 0,
       savedInvestigationsCount: 0,
     },
@@ -139,20 +140,31 @@ class StorageService {
     }
   }
 
-  getUserProfile(userId?: string): UserProfile {
+  getUserProfile(userId?: string, email?: string): UserProfile {
     if (!this.isAvailable()) return DEFAULT_USER_PROFILE;
     try {
       const storageKey = userId ? `${STORAGE_KEYS.USER_PROFILE}_${userId}` : STORAGE_KEYS.USER_PROFILE;
-      const data = localStorage.getItem(storageKey);
+      let data = localStorage.getItem(storageKey);
+      if (!data && userId) {
+        const rootData = localStorage.getItem(STORAGE_KEYS.USER_PROFILE);
+        if (rootData) {
+          try {
+            const rootParsed = JSON.parse(rootData);
+            if (rootParsed.id === userId) {
+              data = rootData;
+            }
+          } catch {}
+        }
+      }
       if (!data) {
         if (userId) {
-          return createNewUserProfile(userId, 'user@prestige.local');
+          return createNewUserProfile(userId, email || 'user@prestige.local');
         }
         return DEFAULT_USER_PROFILE;
       }
       const profile: UserProfile = JSON.parse(data);
       if (userId && profile.id !== userId) {
-        return createNewUserProfile(userId, 'user@prestige.local');
+        return createNewUserProfile(userId, email || 'user@prestige.local');
       }
       if (profile.username === 'Agent Cipher' || profile.username === 'Agent' || profile.username === 'Alex Morgan' || profile.name === 'Alex Morgan') {
         profile.username = DEFAULT_USER_PROFILE.username;
