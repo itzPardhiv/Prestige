@@ -1,0 +1,28 @@
+# PRESTIGE — Supabase Local & CI/CD CLI Configuration
+project_id = "prestige"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+enabled = true
+site_url = "https://theprestige.vercel.app"
+additional_redirect_urls = [
+  "https://theprestige.vercel.app/reset-password",
+  "http://localhost:3000/reset-password"
+]
+jwt_expiry = 3600
+enable_signup = true
