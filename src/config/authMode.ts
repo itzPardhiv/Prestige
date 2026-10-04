@@ -15,4 +15,4 @@
  * 
  * To switch back to Supabase Auth in production, toggle this flag to false.
  */
-export const USE_LOCAL_DEV_AUTH = true;
+export const USE_LOCAL_DEV_AUTH = false;

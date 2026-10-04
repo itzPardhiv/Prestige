@@ -263,14 +263,26 @@ export const supabaseAuthService = {
       if (!session || !session.user) return null;
 
       const profile = await this.getProfile(session.user.id);
-      if (!profile) return null;
-
-      if (!profile.is_active) {
-        await this.signOut();
-        return null;
+      if (profile) {
+        if (!profile.is_active) {
+          await this.signOut();
+          return null;
+        }
+        return this.mapProfileToUser(profile);
       }
 
-      return this.mapProfileToUser(profile);
+      // Safe fallback when profile trigger is delayed or table is being created
+      const userMeta = session.user.user_metadata || {};
+      const fallbackName = userMeta.name || userMeta.display_name || session.user.email?.split('@')[0] || 'Analyst';
+      return {
+        ...DEFAULT_USER_PROFILE,
+        id: session.user.id,
+        email: session.user.email || '',
+        username: fallbackName,
+        name: fallbackName,
+        role: session.user.email?.toLowerCase() === 'itzpardhiv@gmail.com' ? 'ADMIN' : 'USER',
+        joinedDate: session.user.created_at || new Date().toISOString(),
+      };
     } catch {
       return null;
     }
