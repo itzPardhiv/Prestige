@@ -184,15 +184,16 @@ export const supabaseAuthService = {
     }
 
     let cleanEmail = email.trim().toLowerCase();
-    if (cleanEmail === 'itzpardhiv') {
+    if (cleanEmail === 'itzpardhiv' || cleanEmail.includes('itzpardhiv')) {
       cleanEmail = 'itzpardhiv@gmail.com';
     }
+    const cleanPassword = pass.trim();
     const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : null;
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: cleanEmail,
-        password: pass,
+        password: cleanPassword,
       });
 
       if (error) {

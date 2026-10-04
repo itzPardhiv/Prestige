@@ -158,15 +158,21 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     setSuccessNotice(null);
     setIsLoading(true);
 
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPassword = password.trim();
+    const normalizedEmail = (cleanEmail === 'itzpardhiv' || cleanEmail.includes('itzpardhiv'))
+      ? 'itzpardhiv@gmail.com'
+      : cleanEmail;
+
     try {
       if (mode === 'signin') {
-        const res = await onLogin(email, password);
+        const res = await onLogin(normalizedEmail, cleanPassword);
         if (!res.success) {
           setError(res.error || 'Invalid email or password.');
           setIsLoading(false);
         }
       } else {
-        const res = await onSignup(name, email, password);
+        const res = await onSignup(name.trim(), normalizedEmail, cleanPassword);
         if (!res.success) {
           setError(res.error || 'Failed to create account.');
           setIsLoading(false);
@@ -334,11 +340,15 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                   <div className="relative">
                     <Mail className="w-4 h-4 text-content-tertiary absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input
-                      type="email"
+                      type={mode === 'signup' ? 'email' : 'text'}
+                      inputMode="email"
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      spellCheck={false}
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="name@example.com"
+                      placeholder={mode === 'signup' ? 'name@example.com' : 'name@example.com or username'}
                       className="w-full bg-surface-secondary border border-border rounded-md pl-9 pr-3 py-2 text-xs text-content-primary placeholder:text-content-tertiary focus:outline-none focus:border-brand-500 transition-colors"
                     />
                   </div>

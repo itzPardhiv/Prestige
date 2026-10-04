@@ -141,11 +141,14 @@ export function useUserStore() {
 
   const login = useCallback(async (email: string, pass: string): Promise<{ success: boolean; user?: UserProfile; error?: string }> => {
     const cleanEmail = email.trim().toLowerCase();
-    const normalizedEmail = cleanEmail === 'itzpardhiv' ? 'itzpardhiv@gmail.com' : email;
+    const cleanPassword = pass.trim();
+    const normalizedEmail = (cleanEmail === 'itzpardhiv' || cleanEmail.includes('itzpardhiv'))
+      ? 'itzpardhiv@gmail.com'
+      : cleanEmail;
 
     // When in local development mode, authenticate using Chrome localStorage & Web Crypto SHA-256
     if (USE_LOCAL_DEV_AUTH || !isSupabaseConfigured()) {
-      const res = await authService.login(normalizedEmail, pass);
+      const res = await authService.login(normalizedEmail, cleanPassword);
       if (res.success && res.user) {
         syncUser(res.user);
         setIsAuthenticated(true);
@@ -157,7 +160,7 @@ export function useUserStore() {
     }
 
     // Production Supabase Auth path
-    const res = await supabaseAuthService.signIn(normalizedEmail, pass);
+    const res = await supabaseAuthService.signIn(normalizedEmail, cleanPassword);
     if (res.success && res.user) {
       syncUser(res.user);
       setIsAuthenticated(true);

@@ -258,9 +258,10 @@ class AuthService {
       return { success: false, error: 'Please provide both email and password.' };
     }
     let cleanEmail = email.trim().toLowerCase();
-    if (cleanEmail === 'itzpardhiv') {
+    if (cleanEmail === 'itzpardhiv' || cleanEmail.includes('itzpardhiv')) {
       cleanEmail = 'itzpardhiv@gmail.com';
     }
+    const cleanPassword = password.trim();
     const accounts = this.getAccounts();
     const account = accounts[cleanEmail];
 
@@ -273,11 +274,11 @@ class AuthService {
       return { success: false, error: 'Account is deactivated. Please contact an administrator.' };
     }
 
-    const candidateHash = await hashPassword(password);
+    const candidateHash = await hashPassword(cleanPassword);
 
     // Verify hash match or migrate legacy unhashed entry
     const isMatch = account.passwordHash === candidateHash;
-    const isLegacyPlaintextMatch = account.passwordHash === password;
+    const isLegacyPlaintextMatch = account.passwordHash === cleanPassword;
 
     if (!isMatch && !isLegacyPlaintextMatch) {
       return { success: false, error: 'Invalid email or password.' };

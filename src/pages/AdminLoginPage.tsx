@@ -56,10 +56,11 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({
     setSuccessMessage(null);
 
     let cleanEmail = email.trim().toLowerCase();
-    if (cleanEmail === 'itzpardhiv') {
+    if (cleanEmail === 'itzpardhiv' || cleanEmail.includes('itzpardhiv')) {
       cleanEmail = 'itzpardhiv@gmail.com';
     }
-    if (!cleanEmail || !password) {
+    const cleanPassword = password.trim();
+    if (!cleanEmail || !cleanPassword) {
       setErrorMessage('Please enter both administrator email and master password.');
       return;
     }
@@ -68,7 +69,7 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({
     soundService.playKeyClick();
 
     try {
-      const res = await onAdminLogin(cleanEmail, password);
+      const res = await onAdminLogin(cleanEmail, cleanPassword);
       if (res.success) {
         if (res.user && res.user.role !== 'ADMIN') {
           setErrorMessage('Clearance Denied: This account does not possess administrator privileges.');
@@ -169,26 +170,64 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Email Field */}
             <div className="space-y-1.5">
-              <label
-                htmlFor="admin-email"
-                className="block text-[11px] font-semibold tracking-wider uppercase text-content-secondary"
-              >
-                Administrator Email
-              </label>
+              <div className="flex items-center justify-between">
+                <label
+                  htmlFor="admin-email"
+                  className="block text-[11px] font-semibold tracking-wider uppercase text-content-secondary"
+                >
+                  Administrator Email / Callsign
+                </label>
+                <span className="text-[10px] text-amber-500 font-mono">
+                  {email.trim().toLowerCase().includes('itzpardhiv') ? '✓ itzpardhiv verified' : 'itzpardhiv@gmail.com'}
+                </span>
+              </div>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-content-tertiary">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-400">
                   <Mail className="w-4 h-4" />
                 </div>
                 <input
                   id="admin-email"
-                  type="email"
+                  type="text"
+                  inputMode="email"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                   value={email}
+                  onFocus={(e) => e.target.select()}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@prestige.local"
+                  placeholder="itzpardhiv@gmail.com or itzpardhiv"
                   required
-                  autoComplete="email"
-                  className="w-full pl-9 pr-3 py-2 text-xs rounded-lg border border-border bg-surface-secondary/50 text-content-primary placeholder-content-tertiary focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-colors font-mono"
+                  autoComplete="username"
+                  className="w-full pl-9 pr-9 py-2.5 text-xs rounded-lg border border-zinc-700 bg-zinc-950 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500 transition-colors font-mono selection:bg-amber-500 selection:text-black"
+                  style={{ backgroundColor: '#09090b', color: '#ffffff' }}
                 />
+                {email.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setEmail('')}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-400 hover:text-white transition-colors"
+                    title="Clear input"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center gap-2 pt-0.5">
+                <span className="text-[10px] text-content-tertiary">Quick Fill:</span>
+                <button
+                  type="button"
+                  onClick={() => setEmail('itzpardhiv')}
+                  className="px-2 py-0.5 text-[10px] rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-mono border border-zinc-700 transition-colors"
+                >
+                  itzpardhiv
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEmail('itzpardhiv@gmail.com')}
+                  className="px-2 py-0.5 text-[10px] rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-mono border border-zinc-700 transition-colors"
+                >
+                  itzpardhiv@gmail.com
+                </button>
               </div>
             </div>
 
@@ -206,7 +245,7 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({
                 </span>
               </div>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-content-tertiary">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-400">
                   <Lock className="w-4 h-4" />
                 </div>
                 <input
@@ -218,12 +257,13 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({
                   required
                   autoComplete="current-password"
                   autoFocus
-                  className="w-full pl-9 pr-10 py-2 text-xs rounded-lg border border-border bg-surface-secondary/50 text-content-primary placeholder-content-tertiary focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-colors font-mono"
+                  className="w-full pl-9 pr-10 py-2.5 text-xs rounded-lg border border-zinc-700 bg-zinc-950 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500 transition-colors font-mono selection:bg-amber-500 selection:text-black"
+                  style={{ backgroundColor: '#09090b', color: '#ffffff' }}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-content-tertiary hover:text-content-primary transition-colors"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-400 hover:text-white transition-colors"
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
