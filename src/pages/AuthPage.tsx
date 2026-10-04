@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowRight, Lock, Mail, User, Eye, EyeOff, CheckCircle2, KeyRound } from 'lucide-react';
 import { authService } from '../services/auth';
+import { USE_LOCAL_DEV_AUTH } from '../config/authMode';
 
 interface AuthPageProps {
   onLogin: (email: string, pass: string) => Promise<{ success: boolean; error?: string }> | { success: boolean; error?: string };
@@ -16,7 +17,12 @@ interface AuthPageProps {
 export const AuthPage: React.FC<AuthPageProps> = ({
   onLogin,
   onSignup,
+  onRequestPasswordReset,
   onResetPasswordLocal,
+  onDemoLogin,
+  onOpenFaq,
+  darkMode,
+  onToggleDarkMode,
 }) => {
   const [mode, setMode] = useState<'signin' | 'signup' | 'forgot'>('signin');
   const [name, setName] = useState('');
@@ -55,6 +61,29 @@ export const AuthPage: React.FC<AuthPageProps> = ({
 
     if (cleanEmail === 'itzpardhiv@gmail.com') {
       setError('Password recovery is restricted for this administrative account.');
+      return;
+    }
+
+    // In Production Supabase Mode, dispatch a real recovery email via Supabase Auth
+    if (!USE_LOCAL_DEV_AUTH) {
+      setIsLoading(true);
+      try {
+        if (onRequestPasswordReset) {
+          const res = await onRequestPasswordReset(cleanEmail);
+          if (res.success) {
+            setForgotStep('success');
+            setSuccessNotice('A secure recovery link has been dispatched to your email address.');
+          } else {
+            setError(res.error || 'Failed to dispatch recovery email. Please try again.');
+          }
+        } else {
+          setError('Password recovery service is unavailable.');
+        }
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'An error occurred while requesting password reset.');
+      } finally {
+        setIsLoading(false);
+      }
       return;
     }
 
@@ -247,10 +276,16 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                 <CheckCircle2 className="w-6 h-6" />
               </div>
               <div className="space-y-1">
-                <span className="label-eyebrow text-emerald-500">Credentials Updated</span>
-                <h2 className="text-lg font-semibold text-content-primary">Password Successfully Changed</h2>
+                <span className="label-eyebrow text-emerald-500">
+                  {!USE_LOCAL_DEV_AUTH ? 'Recovery Link Sent' : 'Credentials Updated'}
+                </span>
+                <h2 className="text-lg font-semibold text-content-primary">
+                  {!USE_LOCAL_DEV_AUTH ? 'Check Your Email' : 'Password Successfully Changed'}
+                </h2>
                 <p className="text-xs text-content-secondary max-w-xs mx-auto leading-relaxed">
-                  Your new password has been cryptographically hashed (SHA-256) and saved locally. Plaintext passwords are never stored.
+                  {!USE_LOCAL_DEV_AUTH
+                    ? 'A secure password recovery email has been sent. Follow the link to reset your credentials on the recovery terminal.'
+                    : 'Your new password has been cryptographically hashed (SHA-256) and saved locally. Plaintext passwords are never stored.'}
                 </p>
               </div>
 
@@ -309,7 +344,9 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                   </div>
                   {mode === 'forgot' && (
                     <p className="text-[11px] text-content-tertiary">
-                      Enter the registered email of your local account to proceed with password reset.
+                      {!USE_LOCAL_DEV_AUTH
+                        ? 'Enter your registered email address to receive a secure recovery link.'
+                        : 'Enter the registered email of your local account to proceed with password reset.'}
                     </p>
                   )}
                 </div>
@@ -438,7 +475,9 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                   {isLoading
                     ? 'Processing...'
                     : mode === 'forgot'
-                    ? forgotStep === 'find'
+                    ? !USE_LOCAL_DEV_AUTH
+                      ? 'Send Recovery Link'
+                      : forgotStep === 'find'
                       ? 'Find Account & Continue'
                       : 'Save New Password'
                     : mode === 'signin'
@@ -469,7 +508,9 @@ export const AuthPage: React.FC<AuthPageProps> = ({
           )}
 
           <p className="text-[11px] text-content-tertiary text-center">
-            PRESTIGE local development mode: passwords are cryptographically hashed (SHA-256). All ciphers and reports remain local on your device.
+            {USE_LOCAL_DEV_AUTH
+              ? 'PRESTIGE local development mode: passwords are cryptographically hashed (SHA-256). All ciphers and reports remain local on your device.'
+              : 'PRESTIGE security clearance active. Authentication and authorization are protected by Supabase & PostgreSQL RLS.'}
           </p>
         </div>
 

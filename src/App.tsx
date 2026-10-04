@@ -124,6 +124,7 @@ export function App() {
     addXp,
     recordReportGenerated,
     updateUsername,
+    requestPasswordReset,
     updatePassword,
     resetPasswordLocal,
   } = useUserStore();
@@ -402,6 +403,7 @@ export function App() {
         <AuthPage
           onLogin={login}
           onSignup={signup}
+          onRequestPasswordReset={requestPasswordReset}
           onResetPasswordLocal={resetPasswordLocal}
           onDemoLogin={demoLogin}
           onOpenFaq={() => {

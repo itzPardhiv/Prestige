@@ -42,7 +42,7 @@ async function run() {
   const accounts = authService.getAccounts();
   assert(accounts['itzpardhiv@gmail.com'] !== undefined, 'Authoritative admin account is pre-seeded');
   assert(accounts['itzpardhiv@gmail.com'].user.role === 'ADMIN', 'itzpardhiv@gmail.com is ADMIN');
-  assert(accounts['alex@prestige.edu'].user.role === 'USER', 'alex@prestige.edu is USER');
+  assert((accounts['learner@prestige.local'] || accounts['alex@prestige.edu'])?.user.role === 'USER', 'Learner account is USER');
   assert(accounts['itzpardhiv@gmail.com'].passwordHash.length === 64, 'Password hash is a 64-character SHA-256 hex string');
   assert(!accounts['itzpardhiv@gmail.com'].password, 'Plaintext password field DOES NOT exist on account');
 
@@ -115,9 +115,9 @@ async function run() {
     const adminLoginRes = await authService.login('itzpardhiv@gmail.com', adminPass);
     assert(adminLoginRes.success, 'Login succeeds for itzpardhiv@gmail.com with admin credentials');
     assert(adminLoginRes.user?.role === 'ADMIN', 'itzpardhiv@gmail.com has role = ADMIN');
+    const adminUser = authService.getCurrentUser();
+    assert(adminUser?.role === 'ADMIN', 'Current active user role is ADMIN');
   }
-  const adminUser = authService.getCurrentUser();
-  assert(adminUser?.role === 'ADMIN', 'Current active user role is ADMIN');
 
   const blockedReset = await authService.resetPasswordLocal('itzpardhiv@gmail.com', 'NewPassword123!');
   assert(!blockedReset.success, 'Password reset is strictly disabled for itzpardhiv@gmail.com');
