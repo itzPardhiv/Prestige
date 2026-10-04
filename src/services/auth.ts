@@ -67,9 +67,9 @@ export async function hashPassword(password: string): Promise<string> {
 // Produced by hashPassword('password123') with SALT_PREFIX
 const DEFAULT_SEED_HASH = '5afea9ed3225a508e854ef1b7606ddbb84f475726c4f04919c72b861f3deeb13';
 
-// Authoritative single-admin hash for itzpardhiv@gmail.com
+// Authoritative single-admin hash for itzpardhiv@gmail.com with password 'BabulakeBabu@001'
 // Cryptographically verified one-way SHA-256 digest
-const ADMIN_SEED_HASH = '7e9c6fab9c114d3eb94663b64fdd07b72f80f42c885f9e59f4bbb2ea77544f7e';
+const ADMIN_SEED_HASH = 'f9bc5377830fd9b4722c9605be5ac5823edca4fc184cc4ca15c17be943423ad0';
 
 class AuthService {
   private isAvailable(): boolean {
@@ -91,8 +91,8 @@ class AuthService {
             user: {
               ...DEFAULT_USER_PROFILE,
               id: 'admin-pardhiv-01',
-              username: 'Pardhiv',
-              name: 'Pardhiv',
+              username: 'ItzPardhiv',
+              name: 'ItzPardhiv',
               email: 'itzpardhiv@gmail.com',
               callsign: 'PARDHIV-01',
               role: 'ADMIN',
@@ -257,7 +257,10 @@ class AuthService {
     if (!email || !password) {
       return { success: false, error: 'Please provide both email and password.' };
     }
-    const cleanEmail = email.trim().toLowerCase();
+    let cleanEmail = email.trim().toLowerCase();
+    if (cleanEmail === 'itzpardhiv') {
+      cleanEmail = 'itzpardhiv@gmail.com';
+    }
     const accounts = this.getAccounts();
     const account = accounts[cleanEmail];
 

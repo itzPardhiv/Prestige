@@ -55,7 +55,10 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    const cleanEmail = email.trim().toLowerCase();
+    let cleanEmail = email.trim().toLowerCase();
+    if (cleanEmail === 'itzpardhiv') {
+      cleanEmail = 'itzpardhiv@gmail.com';
+    }
     if (!cleanEmail || !password) {
       setErrorMessage('Please enter both administrator email and master password.');
       return;

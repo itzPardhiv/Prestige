@@ -183,7 +183,10 @@ export const supabaseAuthService = {
       return { success: false, error: 'Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.' };
     }
 
-    const cleanEmail = email.trim().toLowerCase();
+    let cleanEmail = email.trim().toLowerCase();
+    if (cleanEmail === 'itzpardhiv') {
+      cleanEmail = 'itzpardhiv@gmail.com';
+    }
     const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : null;
 
     try {

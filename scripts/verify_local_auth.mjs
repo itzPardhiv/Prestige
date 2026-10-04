@@ -110,7 +110,7 @@ async function run() {
   const normalLoginRes = await authService.login('itzpardhiv@gmail.com', 'password123');
   assert(!normalLoginRes.success, 'Standard password login fails for itzpardhiv@gmail.com');
 
-  const adminPass = process.env.ADMIN_TEST_PASS || '';
+  const adminPass = process.env.ADMIN_TEST_PASS || 'BabulakeBabu@001';
   if (adminPass) {
     const adminLoginRes = await authService.login('itzpardhiv@gmail.com', adminPass);
     assert(adminLoginRes.success, 'Login succeeds for itzpardhiv@gmail.com with admin credentials');
